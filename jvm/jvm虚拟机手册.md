@@ -3,8 +3,11 @@
 - ## 内存与垃圾回收
 
   ### 1. 内存结构概述
-
-  ### ![内存结构简图](../jvm/image/内存结构简图.png)
+  ![内存结构简图](../jvm/image/内存结构简图.png)
+  <center style="font-size:20px;color:#1E90FF">图1.内存结构简图</center> 
+  
+  ![内存结详细图](../jvm/image/内存结构详细图.png)
+  <center style="font-size:20px;color:#1E90FF">图2.内存结构详细图</center> 
 
   ### 2. 类加载子系统
   ### 3. 运行时数据区
