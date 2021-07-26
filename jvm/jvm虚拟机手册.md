@@ -65,12 +65,29 @@
 
 - 初始化(Initialization)
 
-  初始化阶段就是执行类构造器方法<clinit>()过程。
+  初始化阶段就是之心类构造器方法<clinit>()的过程。
 
-  此方法不需要定义，是javac编译器自动收集类中的所有类变量的赋值动作和静态代码块中的语句合并而来。
+  **此方法不需要定义，是javac编译器自动收集类中的所有类变量的赋值动作和静态代码块中的语句合并而来的。**
 
   构造方法中指令按语句在源文件中出现的顺序执行。
 
+  ```java
+  	public class Demo {
+          private static int num = 1;
+          static {
+              num = 2;
+              number = 20;
+          }
+          private static int number = 10; // 链接(linking)的prepare阶段： number = 0; initial阶段: 先20再10, 最终 number=10; 
+      }
+  ```
+  
+  <clinit>() 不同于类的构造器。（关联：构造器是虚拟机视角下的<init>())
+  
+  若该类具有父类，JVM会保证字类的<clinit>()执行之前，父类的<clinit>()已经执行完毕。
+  
+  **虚拟机必须保证一个类的<clinit>() 方法在多线程下被同步加锁**。
+  
   
 
 ## 2. 垃圾回收
