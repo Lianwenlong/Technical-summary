@@ -6,17 +6,17 @@
 
 ![内存结构简图](../jvm/image/内存结构简图.png)
 
-  <center style="font-size:20px;color:#1E90FF">图1.内存结构简图</center> 
+  <center style="font-size:18px;color:#1E90FF">图1.内存结构简图</center> 
 
 ![内存结详细图](../jvm/image/内存结构详细图.png)
 
-  <center style="font-size:20px;color:#1E90FF">图2.内存结构详细图</center> 
+  <center style="font-size:18px;color:#1E90FF">图2.内存结构详细图</center> 
 
 ### 1.2 类加载子系统
 
 ![类加载子系统](../jvm/image/类加载子系统.png)
 
-  <center style="font-size:20px;color:#1E90FF">图3.类加载子系统</center>
+  <center style="font-size:18px;color:#1E90FF">图3.类加载子系统</center>
 
 负责从文件系统或者网络中加载Class文件,class文件在文件开头有特定的文件标识
 
@@ -89,6 +89,19 @@
   **虚拟机必须保证一个类的<clinit>() 方法在多线程下被同步加锁**。
 
 #### 1.2.1 类加载器
+![类加载器](../jvm/image/类加载器.png)
+
+  <center style="font-size:18px;color:#1E90FF">图4.类加载器</center>
+
+java 支持两种类型的类加载器
+
+1. 引导类加载器(Bootstrap ClassLoader)
+2. 其他加载器(所有派生于抽象类ClassLoader的类加载器)
+   ![ClassLoader类图](../jvm/image/ClassLoader类图.png)
+
+  <center style="font-size:18px;color:#1E90FF">图5.ClassLoader类图</center>
+
+无论类加载器的类型如何划分，再程序中我们最常见的类加载器始终只有3个。
 
 ## 2. 垃圾回收
 
