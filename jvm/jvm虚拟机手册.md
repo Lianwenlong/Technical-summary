@@ -206,7 +206,155 @@ DriverManager.getCallerClassLoader()
 ```
 #### 1.2.3  **双亲委派机制**
 
+Java虚拟机对class文件采用的是**按需加载**的方式，依旧是说当需要使用该类时才会将它的class文件加载到内存生成class对象。而且加载某个类的class文件时，java虚拟机采用的是双亲委派模式，即把请求交由父类处理，它是一种任务委派模式。
 
+**工作原理：**
+
+1. 如果一个类加载器收到了类加载请求，它并不会自己先去加载，而是把这个请求委托给父类的加载器去执行
+
+2. 如果父类的加载器还存在其父类加载器，则进一步向上委托，依次递归，请求最终将到达顶层的启动类加载器
+
+3. 如果父类加载器可以完成类加载任务，就成功返回，倘若父类加载器无法完成此加载任务，子类加载器才会尝试自己去加载，这就是双亲委派模式。
+
+   ![双亲委派](../jvm/image/双亲委派.png)
+   
+   <center style="font-size:18px;color:#1E90FF">图6.双亲委派</center>
+
+代码示例理解:
+
+```java
+// 在src下自己创建一个java.lang包，创建一个String类
+package java.lang;
+
+public class String {
+    static {
+        System.out.println("自定义String类静态方法");
+    }
+}
+```
+
+```java
+package org.example;
+
+public class StringTest {
+    public static void main(String[] args) {
+        String str = new java.lang.String();
+        System.out.println("hello world");
+        
+        StringTest test = new StringTest();
+        System.out.println(test.getClass().getClassLoader());
+    }
+}
+
+/** 结果
+hello world
+sun.misc.Launcher$AppClassLoader@18b4aac2
+
+从结果来看,静态代码块没有被执行，说明String并没有加载自己定义的String类。
+而是加载了java核心类库定义的String类。由此说明当加载String时，一直向上委派，委派到BootstrapClassLoader时，
+发现该类是以java.开头属于启动类加载器的加载范围，因此启动类加载器直接加载了java核心类库的String类。
+而StringTest类向上委托时，BootstrapClassLoader和ExtensionClassLoader发现
+StringTest不在他们的加载路径下，最终交由系统类加载器自己加载
+*/
+```
+
+```java
+// 在自定义java.lang包的String类种加入main方法
+package java.lang;
+
+public class String {
+    static {
+        System.out.println("自定义String类静态方法");
+    }
+
+    public static void main(String[] args) {
+        System.out.println("hello,string");
+    }
+}
+
+/** 结果
+错误: 在类 java.lang.String 中找不到 main 方法, 请将 main 方法定义为:
+   public static void main(String[] args)
+否则 JavaFX 应用程序类必须扩展javafx.application.Application
+
+从此结果来看，main方法执行时,此时需要加载Strin类，类在加载的时候根据双亲委派机制，加载了java核心类库的String类，核心类库中String是没有main方法的
+因此此时去执行main方法，就会报错
+*/
+```
+
+```java
+package java.lang;
+
+public class Demo {
+    public static void main(String[] args) {
+        System.out.println("hello, demo");
+    }
+}
+/** 结果
+Error: A JNI error has occurred, please check your installation and try again
+Exception in thread "main" java.lang.SecurityException: Prohibited package name: java.lang
+	at java.lang.ClassLoader.preDefineClass(ClassLoader.java:655)
+	at java.lang.ClassLoader.defineClass(ClassLoader.java:754)
+	at java.security.SecureClassLoader.defineClass(SecureClassLoader.java:142)
+	at java.net.URLClassLoader.defineClass(URLClassLoader.java:468)
+	at java.net.URLClassLoader.access$100(URLClassLoader.java:74)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:369)
+	at java.net.URLClassLoader$1.run(URLClassLoader.java:363)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:362)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:418)
+	at sun.misc.Launcher$AppClassLoader.loadClass(Launcher.java:355)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:351)
+	at sun.launcher.LauncherHelper.checkAndLoadMain(LauncherHelper.java:601)
+
+如果能被加载，那么可能会对引导类加载器造成印象，为了安全性和核心API被随意篡改，不允许用户自定义类使用核心api的包名命名
+*/
+```
+
+**双亲委派的优势：**
+
+- 避免类的重复加载
+- 保护程序安全，防止核心API被随意篡改
+  - 自定义类： java.lang.String
+  - 自定义类： java.lang.Demo
+
+**沙箱安全机制**
+
+上述自定义String类时，会先使用BootstrapClassLoader进行加载，在加载过程中会先加载jdk自带的文件(rt.jar包中的java\lang\String.class), 报错信息说没有main方法，因为加载的是rt.jar包下的String类。这样可以保证对java核心源代码的安全保护，这就是沙箱安全机制。
+#### 1.2.4  **其他**
+
+**在jvm中表示两个class对象是否为同一个对象存在两个必要条件：**
+
+1. 类的完整类名必须一致，包括包名。
+2. 加载这个类的ClassLoader（指ClassLoader实例对象）必须相同
+
+换句话说，在jvm中，即使这两个类对象（class对象）来源于同一个Class文件，被同一个虚拟机所加载，单只要加载它们的ClassLoader实例对象不同，那么这两个类对象也是不相等的。
+
+
+
+jvm必须知道一个类型是由启动加载器加载的还是由其他类加载器加载的。
+
+**如果一个类型是由其他类加载器加载的，那么jvm会将这个类加载器的一个引用作为类型信息的一部分保存在方法区中。**
+
+当解析一个类型到另有一个类型的引用的时候，jvm需要保证这两个类型类加载器是相同的（不太理解时，学习动态链接）。
+
+
+
+java程序对类的使用分为：主动使用（会初始化）和被动使用。
+
+- 主动使用又分为七种
+
+  - 创建类的实例
+  - 访问某个类或接口的静态变量，或者对该静态变量赋值
+  - 调用类的静态方法
+  - 反射（比如 Class.forName(“xxx”)）
+  - 初始化一个类的字类
+  - Java虚拟机启动时被标记为启动类的类
+  - JDK 7 开始提供的动态语言支持： java.lang.invoke.MethodHandle实例解析结果REF_getStatic、REF_putStatic、REF_invokeStatic句柄对应的类没有初始化，则初始化
+
+- 除了以上7中，其他使用Java类的方法都是被看作是对类的被动使用，**都不会导致类的初始化**
+
+  
 
 ## 2. 垃圾回收
 
