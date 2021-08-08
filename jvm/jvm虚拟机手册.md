@@ -527,6 +527,8 @@ JVM直接对栈的操作只有两个，就是对栈帧的**压栈**和**出栈**
 - 方法返回地址（Return Address）（或方法正常退出或者异常退出的定义）
 - 一些附加信息
 
+（动态链接、方法返回地址、附加信息又称为桢数据区）
+
 ![栈帧内部结构](../jvm/image/栈帧内部结构.png)
 
 <center style="font-size:18px;color:#1E90FF">图16.栈帧内部结构</center>
@@ -655,7 +657,130 @@ public class OperandStackTest {
 
 基于栈式架构的虚拟机所使用的零地址指令更加紧凑，但完成一项操作的时候必然需要使用更多的入栈和出栈指令，这同时也就意味着将需要更多的指令分派次数和内存读写次数。
 
-由于操作数是存储在内存中的，因此频繁地执行内存读/写操作必然会影响执行速度。为了解决这个问题，Hotspot JVM的设计者们提出了**栈顶缓存技术,将栈顶元素全部缓存再物理CPU的寄存器中**,以此降低对内存的读/写次数，提升执行引擎的执行效率。
+由于操作数是存储在内存中的，因此频繁地执行内存读/写操作必然会影响执行速度。为了解决这个问题，Hotspot JVM的设计者们提出了**栈顶缓存技术,将栈顶元素全部缓存在物理CPU的寄存器中**,以此降低对内存的读/写次数，提升执行引擎的执行效率。
+
+
+
+##### **1.3.2.5 动态链接**（或指向运行时常量池的方法引用）
+
+- 每一个栈帧内部都包含一个**指向运行时常量池中该栈帧所属方法的引用**。包含这个引用的目的就是为了支持当前方法的代码能够实现**动态链接（Dynamic Linking）**。比如invokedynamic指令
+- 在Java源码文件被编译到字节码文件中时，所有的变量和方法引用都作为符号引用（Symbolic Reference）保存在class文件的常量池中。比如：描述一个方法调用了另外的其他方法时，就是通过常量池中指向方法的符号引用来表示的，**那么动态链接的作用就是为了将这些符号引用转换为调用方法的直接引用。**
+- 常量池的作用就是为了以提供一些符号和常量，便于指令的识别。
+
+![动态链接](../jvm/image/动态链接.png)
+
+<center style="font-size:18px;color:#1E90FF">图20.动态链接</center>
+
+**方法的调用**
+
+在JVM中，将符号引用转化为调用方法的直接引用与放过发的绑定机制相关。
+
+对应方法的绑定机制有早期绑定和晚期绑定。绑定时一个字段、方法或者类在符号引用被替换为直接引用的过程，这仅仅发生一次。
+
+- 静态链接：
+
+  当一个字节码文件在被装载进JVM内部时，如果被调用的**目标方法在编译期可知**，且在运行期保持不变时。这种情况下将调用方法的符号有引用转换为直接引用的过程称之为静态链接。
+
+  - 对应方法的绑定机制为：早期绑定，就是指**被调用的目标方法如果在编译期可知，且运行期保持不变时，即可将这个方法与所属的类型进行绑定**，这样一来，由于明确了被调用的目标方法究竟是哪一个，因此也就可以使用静态链接的方式将符号引用转换为直接引用。
+
+- 动态链接：
+
+  如果**被调用的方法在编译期无法被确定下来**，也就是说，只能够在程序运行期将调用方法的符号引用转换为直接引用，由于这种引用转换过程具备动态性，因此也就被称之为动态链接。
+
+  - 对应方法的晚期绑定机制： 如果**被调用的方法在编译期无法被确定下来，只能够在程序运行期根据实际的类型绑定相关的方法**，这种绑定方式也就被称为晚期绑定。
+
+**虚方法与非虚方法**
+
+- 非虚方法
+  - 如果方法在编译期就确定了具体的调用版本，这个版本在运行时是不可变的。这一样的方法成为非虚方法。
+  - 静态方法、私有方法、final方法、实例构造器、父类方法都是非虚方法
+- 虚方法
+  - 以上之外的其他方法为虚方法
+
+
+
+虚拟机中提供了以下几条方法调用指令：
+
+- 普通调用指令
+  - invokestatic：调用静态方法，解析阶段确定唯一方法版本
+  - invokespecial：调用<init>方法、私有及父类方法，解析阶段确定唯一方法版本
+  - invokevirtual：调用所有虚方法
+  - invokeinterface：调用接口方法
+- 动态调用指令
+  - invokedynamic：动态解析出需要调用的方法，然后执行
+
+前四条指令固化在虚拟机内部，方法的调用执行不可人为干预，而invokedynamic指令则支持由用户确定方法版本。其中**invokestatic指令和invokespecial指令调用用的方法成为非虚方法，其余的（final修饰除外）称为虚方法**
+
+**Java语言中方法重写的本质：**
+
+1. 找到操作数栈顶的第一个元素所执行的对象的实际类型，记作 C。
+2. 如果在类型C中找到与常量中的描述符合简单名称都相符的方法，则进行访问权限校验，如果通过则返回这个方法的直接引用，查找过程结束。如果不通过，则返回java.lang.IllegalAccessError异常。
+3. 否则，按照继承关系从下往上一次对C的各个父类进行第2步的搜索和验证过程。
+4. 如果始终没有找到合适的方法，则抛出java.lang.AbstractMethodError异常。
+
+IllegalAccessError介绍：
+
+程序试图访问或修改一个属性或调用一个方法，这个属性或方法，你没有权限访问。一般的，这个会引起编译器异常。这个错误如果发生在运行时，就说明一个类发生了不兼容的改变。
+
+##### **1.3.2.6 方法返回地址**
+
+- 存放调用该方法的pc寄存器的值。
+- 一个方法结束，由两种形式：1. 正常执行完成。2.  出现未处理的异常，非正常退出。
+- 无论通过哪种方式退出，在方法退出后都返回到该方法被调用的位置。方法正常退出时，**调用者的PC计数器的值作为返回地址，即调用该方法的指令的下一条指令的地址。**而通过异常退出的，返回地址是要通过异常表来确定，栈帧中一般不会保存这部分信息。
+- 本质上，方法的退出就是当前栈帧出栈的过程。此时，需要恢复上层方法的局部变量表、操作数栈、将返回值压入调用者栈帧的操作数栈、设置PC寄存器值等，让调用者方法继续执行下去。
+- **正常完成出口和异常完成出口的区别在于：通过异常完成出口退出的不会给他的上层调用者产生任何的返回值。**
+
+当一个方法开始执行后，只有两种方式可以退出这个方法：
+
+1. 执行引擎遇到任意一个方法返回的字节码指令（return），会有返回值传递给上层的方法调用者，简称正常完成出口。
+
+   1. 一个方法在正常调用完成之后究竟需要使用哪一个返回指令还需要根据方法返回值的实际数据类型而定。
+   2. 在字节码指令中，返回指令包含ireturn（当返回值是boolean、byte、char、short和int类型时使用）、lreturn、freturn、dreturn以及areturn，另外还有一个return指令供声明为void的方法、实例初始化方法、类和接口的初始化方法使用。
+
+2. 在方法执行的过程中遇到了异常（Exception），并且这个异常没有在方法内进行处理，也就是只要在本方法的异常表中没有搜索到匹配的异常处理器，就会导致方法退出。简称**异常完成出口**。
+
+   方法执行过程中抛出异常时的异常处理，存储在一个异常处理表，方便在发生异常的时候找到处理异常的代码。
+
+```java
+  public static void main(java.lang.String[]);
+    descriptor: ([Ljava/lang/String;)V
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=4, args_size=1
+         0: ldc           #2                  // class org/example/App
+         2: invokevirtual #3                  // Method java/lang/Class.getClassLoader:()Ljava/lang/ClassLoader;
+         5: ldc           #4                  // String consume.properties
+         7: invokevirtual #5                  // Method java/lang/ClassLoader.getResourceAsStream:(Ljava/lang/String;)Ljava/io/InputStream;
+        10: astore_1
+        11: new           #6                  // class java/util/Properties
+        14: dup
+        15: invokespecial #7                  // Method java/util/Properties."<init>":()V
+        18: astore_2
+        19: aload_2
+        20: aload_1
+        21: invokevirtual #8                  // Method java/util/Properties.load:(Ljava/io/InputStream;)V
+        24: goto          32
+        27: astore_3
+        28: aload_3
+        29: invokevirtual #10                 // Method java/io/IOException.printStackTrace:()V
+        32: aload_2
+        33: ldc           #11                 // String aa
+        35: invokevirtual #12                 // Method java/util/Properties.getProperty:(Ljava/lang/String;)Ljava/lang/String;
+        38: astore_3
+        39: getstatic     #13                 // Field java/lang/System.out:Ljava/io/PrintStream;
+        42: aload_3
+        43: invokevirtual #14                 // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+        46: return
+      Exception table:
+         from    to  target type
+            19    24    27   Class java/io/IOException  // 如果时19-24行指令地址发生异常按照27行处理方式处理
+```
+
+
+
+
+
+
 
 
 #### 1.3.3  **程序计数器**
