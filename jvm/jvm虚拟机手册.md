@@ -1147,7 +1147,19 @@ public class Demo {
 
 #### 1.3.5  **方法区（Method Area [Metaspace]）**
 
-- 
+##### **1.3.5.1 运行时数据区划分**
+
+  ![运行时数据区结构图](../jvm/image/运行时数据区结构图.png)
+
+  <center style="font-size:18px;color:#1E90FF">图29.运行时数据区结构图</center>
+
+  ![数据共享角度运行时数据区划分](../jvm/image/数据共享角度运行时数据区划分.png)
+
+  <center style="font-size:18px;color:#1E90FF">图30.数据共享角度运行时数据区划分</center>
+
+  ![栈堆方法区的交互关系](../jvm/image/栈堆方法区的交互关系.png)
+
+  <center style="font-size:18px;color:#1E90FF">图31.栈堆方法区的交互关系</center>
 
 
 
