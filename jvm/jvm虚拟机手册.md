@@ -1143,13 +1143,11 @@ public class Demo {
 
 注意： -server 启动Server模式，因为在Server模式下，才可以开启逃逸分析，客户端模式下没有逃逸分析
 
-
-
 #### 1.3.5  **方法区（Method Area [Metaspace]）**
 
 ##### **1.3.5.1 运行时数据区划分**
 
-  ![运行时数据区结构图](../jvm/image/运行时数据区结构图.png)
+![运行时数据区结构图](../jvm/image/运行时数据区结构图.png)
 
   <center style="font-size:18px;color:#1E90FF">图29.运行时数据区结构图</center>
 
@@ -1161,7 +1159,13 @@ public class Demo {
 
   <center style="font-size:18px;color:#1E90FF">图31.栈堆方法区的交互关系</center>
 
+Java虚拟机规范中明确说明：“尽管所有的方法区在逻辑上是属于堆的一部分，但一些简单的实现可能不会选择区进行垃圾收集或者进行压缩。”但是对应Hotspot JVM而言，方法区还有一个别名叫做Non-Heap（非堆），目的就是要和堆分开。所以，方法区看作是一块独立于Java堆的内存空间。
 
+- 方法区（Method Area）与Java堆一样，是各个线程共享的内存区域
+- 方法区在JVM启动的时候被创建，并且它的实际物理内存空间和Java堆区一样都可以是不连续的。
+- 方法区的大小，跟堆空间一样，可以选择固定大小或者可扩展。
+- 方法区的大小决定了系统可以保存多少个类，如果系统定义了太多的类，导致方法区溢出，虚拟机同样会抛出内存溢出错误：java.lang.OutOfMemoryError: PermGen space (JDK1.8之前) / Metaspace (JDK1.8后)
+- 关闭JVM就会释放这个区域的内存
 
 ### 1.4 本地方法接口和本地方法库
 
