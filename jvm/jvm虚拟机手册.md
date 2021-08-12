@@ -1143,6 +1143,8 @@ public class Demo {
 
 注意： -server 启动Server模式，因为在Server模式下，才可以开启逃逸分析，客户端模式下没有逃逸分析
 
+
+
 #### 1.3.5  **方法区（Method Area [Metaspace]）**
 
 ##### **1.3.5.1 运行时数据区划分**
@@ -1165,7 +1167,204 @@ Java虚拟机规范中明确说明：“尽管所有的方法区在逻辑上是�
 - 方法区在JVM启动的时候被创建，并且它的实际物理内存空间和Java堆区一样都可以是不连续的。
 - 方法区的大小，跟堆空间一样，可以选择固定大小或者可扩展。
 - 方法区的大小决定了系统可以保存多少个类，如果系统定义了太多的类，导致方法区溢出，虚拟机同样会抛出内存溢出错误：java.lang.OutOfMemoryError: PermGen space (JDK1.8之前) / Metaspace (JDK1.8后)
+  - **例如加载大量的第三方jar包；tomcat部署的工程过多（30-50个）**
 - 关闭JVM就会释放这个区域的内存
+
+
+
+##### **1.3.5.2 Hotspot中方法区的演进**
+
+- **在JDK1.7及以前，习惯上把方法区成为永久代。JDK8开始使用元空间取代了永久代**
+
+- 本质上，方法区和永久代并不等价。仅是对Hotspot虚拟机而言的。Java虚拟机规范对如何实现方法区，不做统一要求。例如BEA JRockit/IBM J9中不存在永久代的概念
+  - 现在来看，当年使用永久代，不是好的idea。（使用永久代时，也就是jdk1.7及之前用的都是JVM的内存，而JDK1.8之后元空间使用的是本地内存）导致Java程序更容易OOM（超过-XX:MaxPermSize上限）
+
+  ![方法区](../jvm/image/方法区.png)
+
+  <center style="font-size:18px;color:#1E90FF">图32.方法区</center>
+
+- 而到了JDK 8，终于完全废弃了永久代的概念。改用与JRockit，J9一样在本地内存中实现的元空间（Metaspace）来替代
+
+- 元空间的本质和永久代类似，都是对JVM规范中方法区的实现。不过元空间与永久代最大的区别在于：**元空间不在虚拟机设置的内存中，而是使用本地内存。**
+
+- 永久代，元空间二者并不只是名字变了，内部结构也调整了
+
+- 根据Java虚拟机规范的规定，如果方法区无法满足新得内存分配需求时，将抛出OOM异常。
+
+
+
+##### **1.3.5.3 设置方法区大小与OOM**
+
+- 方法区的大小不必是固定的，jvm可以根据应用的需要动态调整
+- jdk7及以前
+  - 通过 -XX:PermSize来设置永久代初始分配空间。默认是20.75m
+  - -XX:MaxPermSize来设定永久代最大可分配空间。32为机器默认是64m，64位机器默认是82m
+  - 当JVM加载的类信息容量超过这个值，就会报OutOfMemoryError: PermGen space
+- JDK8及以后
+  - 元数据大小可以使用参数 -XX:MetaspaceSize和-XX:MaxMetaspaceSize指定，替代上述原有的两个参数
+  - 默认值依赖于平台。windows下，-XX:MetaspaceSize是21m，-XX:MaxMetaspaceSize的值为-1，即没有限制
+  - 与永久代不同，如果不指定大小，默认情况下，虚拟机会耗尽所有的可用系统内存。如果元数据区发生溢出，虚拟机一样会抛出OutOfMemoryError: Metaspace
+  - -XX:MetaspaceSize: 设置初始的元空间大小。对于一个64位的服务器端JVM来说其默认的-XX:MetaspaceSize为21m。这就是初始的高水位线，一旦触及这个水位线，Full GC将会被触发并卸载没用的类（即这些类对应的类加载器不再存活），然后这个高水位线将会重置。新的高水位线的值取决于GC后释放了多少元空间。如果释放的空间不足，那么在不超过MaxMetaspaceSize时，适当提高该值。如果释放空间过多，则适当降低该值。
+  - 如果初始化的高水位线设置过低，上述高水位线调整情况会发生很多次。通过垃圾回收器的日志可以观察到Full GC多次调用。为了避免频繁地GC，建议将-XX:MetaspaceSize设置为一个相对较高的值
+
+**如何解决OOM？**
+
+1. 要解决OOM异常或者heap space的异常，一般手段是首先通过内存映像分析工具（如Eclipse Memory Analyzer）对dump出来的堆转储快照进行分析，重点是确认内存中的对象是否是必要的，也就是要先分清楚到底是出现了内存泄漏（Memory Leak）还是内存溢出（Memory Overflow）
+2. 如果是内存泄漏（某个对象不再使用，但是引用没有释放，导致该对象一直不能被回收长期驻留在内存中），可进一步通过工具查看泄露对象到GC Roots的引用链。于是就能找到泄露对象是通过怎样的路径与GC Roots相关联并导致垃圾收集器无法自动回收它们的。掌握了泄露对象的类型信息，以及GC Roots引用链的信息，就可以比较准确地定位出泄漏代码的位置。
+3. 如果不存在内存泄漏，换句话说就是内存中的对象确实都还必须存活着，那就应当检查虚拟机的堆参数（-Xmx与-Xms)，与机器物理内存对比看是否还可以调大，从代码上检查是否存在某些对象生命周期过长、持有状态时间过长的情况，尝试减少程序运行期的内存消耗。
+
+
+
+##### **1.3.5.4 方法区内部结构**
+
+方法区用于存储已经被虚拟机加载的类型信息、常量、静态变量、即时编译器编译后的代码缓存等。
+
+- **类型信息**
+
+  对每个加载的类型（类class、接口interface、枚举enum、注解annotation），jvm必须在方法区中存储一些类型信息：
+
+  - 这个类型的完整有效名称（全名= 包名.类名）
+  - 这个类型直接父类的完整有效名（对于interface或是java.lang.Object，都没有父类）
+  - 这个类型的修饰符（public，abstract、final的某个子集）
+  - 这个类型直接接口的一个有序列表
+
+- **域信息（Field 成员变量）**
+
+  - JVM必须在方法区中保存类型的所有域的相关信息以及域的声明顺序。
+  - 域的相关信息包括：域名称、域类型、域修饰符（public、private、protected ...）
+
+  no-final的类变量
+
+  类变量（静态变量）和类关联在一起，随着类的加载而加载，它们成为类数据在逻辑上的一部分。类变量被类的所有实例共享，即使没有类实例时你也可以访问它。
+
+  全局常量： final static 
+
+  被声明为final的类变量的处理方法则不同，每个全局常量在编译的时候就会被分配了。
+
+  ```java
+  public class DemoTest {
+      public static void main(String[] args) {
+          Demo d = null;
+          d.hello();
+          System.out.println(d.count); // 返回 1,不会报错
+      }
+  }
+  
+  class Demo {
+      public static int count = 1;
+      public static final int number = 2; // 在编译期间就已经分配了，可以从字节码中看出
+      
+      public static void hello() {
+          System.out.print("hello");
+      }
+  }
+  
+  /** 对应字节码
+    public static final int numer;
+      descriptor: I
+      flags: ACC_PUBLIC, ACC_STATIC, ACC_FINAL
+      ConstantValue: int 2
+  
+    public static int count;
+      descriptor: I
+      flags: ACC_PUBLIC, ACC_STATIC
+  */
+  ```
+
+  
+
+- **方法信息（Method)**
+
+  JVM必须保存所有方法的一下信息，同域信息一样包括声明顺序
+
+  - 方法名称
+  - 方法的返回类型（或 void）
+  - 方法的参数的数量和类型（按顺序）
+  - 方法的修饰符（public、private、protected、static ...）
+  - 方法的字节码（bytecodes）、操作数栈、局部变量表及大小（abstract和native除外）
+  - 异常表（abstract和native除外）
+    - 每个异常处理的开始位置、结束位置、代码处理在程序计数器中的偏移地址、被捕获的异常类的常量池索引）  
+
+- **运行时常量池**
+
+  方法区，内部包含了运行时常量池。字节码文件，内部包含了常量池（Constant Pool）。字节码文件加载到内存之后，当中的常量池就对应了方法区中的运行时常量池。要弄清楚方法区，需要理解清楚ClassFile，因为加载类的信息都放在方法区，要理解方法区的运行时常量池，需要理解ClassFile中的常量池
+
+  一个有效的字节码文件中除了包含类的版本信息、字段、方法以及接口等描述信息外，还包含一项信息就是常量池表（Constant Pool Table），包括各种字面量和对类型、域和方法的符号引用。
+
+  一个java源文件中的类、接口、编译后产生一个字节码文件。而java中的字节码需要数据支持，通常这种数据会很大以至于不能直接存到字节码里，换另一种方式，可以存到常量池，这个字节码包含了指向常量池的引用。在动态链接的时候会用到运行时常量池。等到实际用到的时候再加载对应的类。如System等。
+
+  **常量池中存储的数据类型包括： 数量值，字符串值，类引用，字段引用，方法引用**
+
+  ```java
+  public class Demo {
+      public static void main(String[] args) {
+          Object obj = new Object();
+      }
+  }
+  /* Object obj = new Object(); 将会被编译成如下字节码
+           0: new           #2                  // class java/lang/Object
+           3: dup
+           4: invokespecial #1                  // Method java/lang/Object."<init>":()V
+  */
+  
+  
+  ```
+
+  常量池可以看做是一张表，虚拟机指令给根据这张常量表找到要执行的类名，方法名，参数类型，字面量等类型。
+
+  ```
+  Classfile /D:/data/Projects/Test/target/classes/org/example/Demo.class
+    Last modified 2021-8-12; size 428 bytes
+    MD5 checksum 5a8bf1f264183882e8839d4d0df5c192
+    Compiled from "Demo.java"
+  public class org.example.Demo
+    minor version: 0
+    major version: 52
+    flags: ACC_PUBLIC, ACC_SUPER
+  Constant pool:
+     #1 = Methodref          #2.#19         // java/lang/Object."<init>":()V
+     #2 = Class              #20            // java/lang/Object
+     #3 = Class              #21            // org/example/Demo
+     #4 = Utf8               <init>
+     #5 = Utf8               ()V
+     #6 = Utf8               Code
+     #7 = Utf8               LineNumberTable
+     #8 = Utf8               LocalVariableTable
+     #9 = Utf8               this
+    #10 = Utf8               Lorg/example/Demo;
+    #11 = Utf8               main
+    #12 = Utf8               ([Ljava/lang/String;)V
+    #13 = Utf8               args
+    #14 = Utf8               [Ljava/lang/String;
+    #15 = Utf8               obj
+    #16 = Utf8               Ljava/lang/Object;
+    #17 = Utf8               SourceFile
+    #18 = Utf8               Demo.java
+    #19 = NameAndType        #4:#5          // "<init>":()V
+    #20 = Utf8               java/lang/Object
+    #21 = Utf8               org/example/Demo
+  {
+    public org.example.Demo();
+      descriptor: ()V
+      flags: ACC_PUBLIC
+      Code:
+        stack=1, locals=1, args_size=1
+           0: aload_0
+           1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+           4: return
+        LineNumberTable:
+          line 7: 0
+        LocalVariableTable:
+          Start  Length  Slot  Name   Signature
+              0       5     0  this   Lorg/example/Demo;
+    ...
+    ...
+  ```
+
+  
+
+
+
 
 ### 1.4 本地方法接口和本地方法库
 
