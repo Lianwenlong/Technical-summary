@@ -1821,15 +1821,108 @@ JDK8元空间，字符串常量在堆。
 
 **StringTable调整的原因**：
 
-	1. permSize默认比较小。
+1. permSize默认比较小。
+
  	2. 2. 永久代垃圾回收频率低。
 
-#### 1.9.3  **String的基本操作**
+#### 1.9.3  **字符串拼接操作**
 
+1. 常量与常量的拼接结果在常量池，原理是编译期优化
+2. 常量池中不会存在相同内容的常量
+3. 只要其中有一个是变量，结果就在堆中。变量拼接的原理是StringBuilder
+4. 如果拼接的结果调用intern()方法，则主动将常量池中还没有的字符串对象放入池中，并返回此对象地址。
 
+```java
+public class Demo {
+    public void test() {
+        String s1 = "javaEE";
+        String s2 = "hadoop";
+        String s3 = "javaEEHadoop";
+        String s4 = "javaEE" + "hadoop";  // 编译器优化：等价于 "javaEEhadoop" 放到常量池中
+        
+        // 如果拼接符号的前后出现了变量，则相当于在堆空间中 new String()，具体内容为拼接的结果 
+        String s5 = s1 + "hadoop"; 
+        String s6 = "javaEE" + s2;
+        String s7 = s1 + s2;
+        // s1 + s2 底层实际执行细节（从字节码文件分析）
+        // ① StringBuilder s = new StringBuilder();
+        // ② s.append("javaEE")
+        // ③ s.append("hadoop")
+        // ④ s.toString() --> 约等于 new String("javaEEhadoop")此时new的字符串是放在堆空间中的，不是放到常量池里
+        
+        System.out.println(s3==s4); // true
+        System.out.println(s3==s5); // false 
+        System.out.println(s3==s6); // false 
+        System.out.println(s3==s7); // false 
+        System.out.println(s5==s6); // false 
+        System.out.println(s5==s7); // false 
+        System.out.println(s6==s7); // false 
+        // intern(): 判断字符串常量池中是否存在javaEEhadoop值，如果存在，则返回常量池中javaEEhadoop的地址；
+        // 如果不存在javaEEhadoop,则在常量池中加载一份javaEEhadoop，并返回此对象的地址
+        String s8 = s6.intern();
+        System.out.println(s3==s8); // true
+    }
+    
+    public void test1() {
+        // 字符串拼接操作不一定使用的是StringBuilder。如果拼接符号左右两边都是字符串常量或者常量引用，则仍然使用编译期优化。
+        // 针对于final修饰类、方法、基本数据类型、、引用数据类型，能使用上建议就用上。
+        final String s1 = "a";
+        final String s2 = "b";
+        String s3 = "ab";
+        String s4 = s1 + s2;
+        System.out.println(s3 == s4); // true
+    }
+}
+```
 
-#### 1.9.4  **字符串拼接操作**
+String 变量添加与StringBuilder效率对比
+
+```java
+public class Demo {
+    // cos: 4470ms
+    public void m1 {
+        String str = "";
+        for(int i = 0; i < highLevel; i++) {
+            str = str + "a"; // 每次都会创建一个StringBuilder，String
+        }
+    }
+    
+    // cos : 7ms
+    public void m2 {
+        // 只需要创建一个StringBuilder,还有改进空间：如果字符串长度是确定小于某个highLevel的，可以创建new StringBuilder(highLevel)；
+        // 减少数组扩容时产生多余的对象
+        StringBuilder str = new StringBuilder();
+        for(int i = 0; i < highLevel; i++) {
+            str.append("a");
+        }
+    }
+}
+```
+
 #### 1.9.5  **intern()的使用**
+
+如果不是用双引号声明的String对象，可以使用String提供的intern方法；intern方法会从字符串常量池中查询当前字符串是否存在，若不存在就会将当前字符串放入常量池中，若存在则返回常量池中的对象。比如：String str = new String("hello").intern(); 也就是说，如果在任意字符串上调用String.intern方法，那么其返回结果所指向的那个类实例，必须和直接以常量形式出现的字符串实例完全相同。因此，表达式（"a" +"b"+"c").intern()  == "abc" 的值必为true；通俗点讲，Interned String就是确保字符串在内存里只有一份拷贝，这样可以节约内存空间，加快字符串操作任务的执行速度。注意这个值会被存放在字符串内部池（String Intern Pool）
+
+**new String("ab") 到底创建了几个对象？new String("a") + new String("b") 又创建了几个对象？ **
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+        String s = new String("1");
+        s.intern();
+        String s2 = "1";
+        System.out.println(s == s2); // 
+        
+        String s3 = new String("1") + new String("1");
+        s3.intern();
+        String s4 = "11";
+        System.out.println(s3 == s4);// 
+    }
+}
+```
+
+
+
 #### 1.9.6  **StringTable的垃圾回收**
 #### 1.9.7  **G1中的String去重操作**
 
