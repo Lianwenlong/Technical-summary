@@ -1619,12 +1619,12 @@ public class Demo {
 **对象访问方式主要有两种**
 
 - **句柄访问**
-![句柄池访问](../jvm/image/句柄池访问.png)
+  ![句柄池访问](../jvm/image/句柄池访问.png)
   - 实现：栈的本地变量表记录了对象引用reference,在堆空间开辟了一块区域，这块区域叫句柄池，放了很多的句柄，一个对象对应一个句柄，句柄有两个信息，一个是到对象实例数据的指针指向了堆空间中new的对象数据，一个是到对象类型数据的指针指向了方法区中对象的类元数据。
   - 好处：reference中存储稳定句柄地址，对象被移动（垃圾收集时移动对象很普遍）时只会改变句柄中实例数据指针即可，reference本身不需要被修改
   - 缺点：首先需要专门消耗一部分的空间用来存放句柄，其次要访问一个对象，要先找到这个引用的句柄，再通过句柄对应的指针访问对象实例，效率较低。
 - **直接指针（Hotspot采用）**
-![直接指针](../jvm/image/直接指针.png)
+  ![直接指针](../jvm/image/直接指针.png)
   - 栈空间的对象指针直接指向了对象的实体，在对象实体当中有一个类型指针指向了方法区中对象的类元数据
   - 好处：直接通过对象引用就访问到对象，效率较高，也无需开辟新的空间。节省空间，速度快
   - 缺点：对象变动时，需要修改栈空间中的引用值
@@ -1901,22 +1901,35 @@ public class Demo {
 
 #### 1.9.5  **intern()的使用**
 
-如果不是用双引号声明的String对象，可以使用String提供的intern方法；intern方法会从字符串常量池中查询当前字符串是否存在，若不存在就会将当前字符串放入常量池中，若存在则返回常量池中的对象。比如：String str = new String("hello").intern(); 也就是说，如果在任意字符串上调用String.intern方法，那么其返回结果所指向的那个类实例，必须和直接以常量形式出现的字符串实例完全相同。因此，表达式（"a" +"b"+"c").intern()  == "abc" 的值必为true；通俗点讲，Interned String就是确保字符串在内存里只有一份拷贝，这样可以节约内存空间，加快字符串操作任务的执行速度。注意这个值会被存放在字符串内部池（String Intern Pool）
+如果不是用双引号声明的String对象，可以使用String提供的intern方法；
 
-**new String("ab") 到底创建了几个对象？new String("a") + new String("b") 又创建了几个对象？ **
+Returns a canonical representation for the string object.
+A pool of strings, initially empty, is maintained privately by the class String.
+When the intern method is invoked, if the pool already contains a string equal to this String object as determined by the equals(Object) method, then the string from the pool is returned. Otherwise, this String object is added to the pool and a reference to this String object is returned.
+
+intern方法会从字符串常量池中查询当前字符串是否存在，若不存在就会将当前字符串放入常量池中，若存在则返回常量池中的对象。比如：String str = new String("hello").intern(); 也就是说，如果在任意字符串上调用String.intern方法，那么其返回结果所指向的那个类实例，必须和直接以常量形式出现的字符串实例完全相同。因此，表达式（"a" +"b"+"c").intern()  == "abc" 的值必为true；通俗点讲，Interned String就是确保字符串在内存里只有一份拷贝，这样可以节约内存空间，加快字符串操作任务的执行速度。注意这个值会被存放在字符串内部池（String Intern Pool）
+
+**new String("ab") 到底创建了几个对象？**
+
+两个对象，一个对象是：new关键字在堆空间创建的。另一个对象是：字符串常量池中的对象。字节码指令：ldc
+
+**new String("a") + new String("b") 又创建了几个对象？ **
+
+对象1： new StringBuilder, 对象2：new String("a"), 对象3：常量池中的"a", 对象4：new String("b"), 对象5：常量池中的"b"
 
 ```java
 public class Demo {
     public static void main(String[] args) {
         String s = new String("1");
-        s.intern();
+        s.intern(); // 调用此方法前，字符串常量池已经存在“1”
         String s2 = "1";
-        System.out.println(s == s2); // 
+        System.out.println(s == s2); // jdk6: false; jdk7: false 
         
         String s3 = new String("1") + new String("1");
-        s3.intern();
+        s3.intern();// 在字符串常量池中生成“11”。 jdk6：创建了一个新的对象“11”，也就是又新地址
+        			// 	jdk7中:此时常量中没有创建“11”，而是创建一个指向堆空间new的“11”的引用
         String s4 = "11";
-        System.out.println(s3 == s4);// 
+        System.out.println(s3 == s4);// jdk6: false; jdk:7 true
     }
 }
 ```
