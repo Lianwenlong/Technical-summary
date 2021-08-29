@@ -61,23 +61,35 @@ Yet Another Resource Negotiator简称Yarn，另一种资源协调者，是Hadoop
 
 客户端可以有多个，集群上可以运行多个ApplicationMaster，每个NodeManager上可以有多个Container
 
+### 1.7  MapReduce 架构概述
+
+MapReduce将计算过程分为两个阶段：Map和Reduce
+
+① Map阶段并行处理输入数据
+
+② Reduce阶段对Map结果进行汇总
+
+![mapreduce](../Hadoop/img/MapReduce.png)
+
+## 二.  Hadoop 环境搭建（todo）
+
+### 2.n  常用端口号说明
+
+|                                  | Hadoop2.x  | Hadoop3.x            |
+| -------------------------------- | ---------- | -------------------- |
+| NameNode内部通信端口             | 8020、9000 | 8020、9000、**9820** |
+| NameNode HTTP UI（对外暴露端口） | **50070**  | **9870**             |
+| MapReduce任务执行情况查看端口    | 8088       | 8088                 |
+| 历史服务器通信端口               | 19888      | 19888                |
 
 
+## 三.  Hadoop 运行模式（todo）
 
-## 二.  Hadoop 概述
+## 四.  常见错误及解决方案（todo）
 
+## 五.  HDFS
 
-
-## 三.  Hadoop 概述
-
-
-
-## 四.  Hadoop 概述
-
-
-
-## 五.  Hadoop 概述
-
+### 5.1  HDFS产生背景
 
 
 ## 六.  Hadoop 概述
