@@ -71,6 +71,8 @@ MapReduce将计算过程分为两个阶段：Map和Reduce
 
 ![mapreduce](../Hadoop/img/MapReduce.png)
 
+
+
 ## 二.  Hadoop 环境搭建（todo）
 
 ### 2.n  常用端口号说明
@@ -121,6 +123,16 @@ MapReduce将计算过程分为两个阶段：Map和Reduce
 #### 5.1.3  组成架构
 
 ![HDFS Architecture](../Hadoop/img/hdfsarchitecture.png)
+
+​	HDFS采用Master/Slave架构，一个HDFS集群是由一个NameNode和一定数量的DataNode组成的。
+
+- **NameNode（NN）**：就是Master，它是一个中心服务器。负责：
+  - 管理HDFS的名称空间
+  - 配置副本策略
+  - 管理数据块（Block）映射信息
+  - 处理客户端读写请求
+- 
+- 
 
 #### 5.1.4  产生背景和定义
 #### 5.1.5  产生背景和定义
