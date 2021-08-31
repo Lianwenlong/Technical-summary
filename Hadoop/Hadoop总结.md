@@ -101,6 +101,8 @@ MapReduce将计算过程分为两个阶段：Map和Reduce
 
 ​	HDFS的使用场景：**适合一次写入，多次读取得场景**。一个文件经过创建、写入和关闭之后就不需要改变。
 
+
+
 #### 5.1.2  优缺点
 
 - **优点：**
@@ -119,6 +121,8 @@ MapReduce将计算过程分为两个阶段：Map和Reduce
   - **不支持并发写入、文件随机修改**
     - 一个文件只能有一个写，不允许多个线程同时写
     - 仅支持数据append（追加），不支持文件的随机修改
+  
+  
 
 #### 5.1.3  组成架构
 
@@ -144,7 +148,9 @@ MapReduce将计算过程分为两个阶段：Map和Reduce
   - 辅组NameNode，分担器工作量，比如定期合并Fsimage和Edits，并推送给NameNode
   - 在紧急情况下，可辅助恢复NameNode
 
-#### 5.1.4 HDFS Block大小（面试重点）
+
+
+#### 5.1.4 HDFS Block大小<font color=red>（面试重点）</font>
 
 ​	HDFS中的文件在物理上时分块（block）存储的，块的大小可以通过参数（dfs.blocksize）来设置，在Hadoop 1.x 默认是64m，在Hadoop 2.x和Hadoop 3.x中默认为128m。<font color=red>**HDFS块的大小设置主要取决于磁盘传输速率**</font>。
 
@@ -158,7 +164,7 @@ MapReduce将计算过程分为两个阶段：Map和Reduce
 
 ### 5.3  HDFS的客户端API（todo）
 
-### 5.4  HDFS的读写流程(重点)
+### 5.4  <font color=red>HDFS的读写流程 (重点)</font>
 
 #### 5.4.1 HDFS写数据流程
 
@@ -179,7 +185,55 @@ MapReduce将计算过程分为两个阶段：Map和Reduce
 ⑦ 数据传输，以Packet（chunk512byte + chunksum4byte）为单位（64k）进行数据传输，发送时有一个ack packet队列，存放了传输的packet，当应答成功时，将packet从队列里移除
 
 
+
+
 #### 5.4.2 网络拓扑-节点距离计算
+
+​	在HDFS写数据过程中，NameNode会选择距离待上传数据距离最近的DataNode接收数据。<font color=red>**节点距离：两个节点到达最近的共同祖先的距离总和。**</font>
+
+如下图: 
+![节点距离计算](../Hadoop/img/节点距离.png)
+
+Distance(r2-3，r2-3) = 0 (在同一节点上)
+
+Distance（r3-1，r3-2）= 2 （在同一机架的不同节点）
+
+Distance（r1-0，r2-0）= 4 （同一机房或数据中心不同机架上）
+
+Distance（r1-1，r4-0） = 6 （不同机房或数据中心的节点）
+
+
+
+#### 5.4.3 机架感知（副本存储节点选择）
+
+源码位置：**BlockPlacementPolicyDefault**类中的**chooseTargetOrder**方法中。
+
+![副本节点选择](../Hadoop/img/副本节点选择.png)
+
+<font color=red>**① 第一个副本在Client所处节点上。**</font>
+
+<font color=red>**② 第二个副本在另一个机架上随机一个节点。(保证数据的可靠性)**</font>
+
+<font color=red>**③ 第三个副本在第二个副本所在机架的随机节点（传输效率高）**</font>
+
+
+
+#### 5.4.2 HDFS读数据流程
+
+![HDFS读取文件](../Hadoop/img/HDFS读取文件.png)
+
+① 客户端通过DistributedFileSystem向NameNode请求下载文件
+
+② NameNode通过查询元数据，找到文件块所在的DataNode地址。
+
+③ 选择节点最近的一台DataNode，请求读取数据。
+
+④ DataNode开始传输数据给客户端（从磁盘里面读取数据输入流，以Packet为单位来做校验）
+
+⑤ 如果DataNode1负载达到量级之后，通过负载均衡可以从另一个节点NameNode读取数据。假如读取第二块时，DataNode1已经达到负载，那么从DataNode开始读取数据。
+
+⑥ 客户端以Packet为单位接收，现在本地缓存，然后写入目标文件。（注意：读取数据是串行读取的，第一块读完之后读第二块进行追加）
+
 
 
 
