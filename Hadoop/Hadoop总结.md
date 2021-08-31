@@ -172,10 +172,14 @@ MapReduce将计算过程分为两个阶段：Map和Reduce
 
 ④ NameNode经过筛选之后将合适的节点信息返回客户端
 
-⑤ 客户端创建数据管道流与
+⑤ 客户端创建数据管道流与DataNode建立通信，建立通信之后
+
+⑥ 应答成功
+
+⑦ 数据传输，以Packet（chunk512byte + chunksum4byte）为单位（64k）进行数据传输，发送时有一个ack packet队列，存放了传输的packet，当应答成功时，将packet从队列里移除
 
 
-#### 5.4.2 HDFS读数据流程
+#### 5.4.2 网络拓扑-节点距离计算
 
 
 
