@@ -236,8 +236,60 @@ Distance（r1-1，r4-0） = 6 （不同机房或数据中心的节点）
 
 
 
+### 5.5  NameNode和SecondaryNameNode工作机制
 
-### 5.5  NN和2NN
+​	NameNode的功能是用来存储元数据的，那么元数据存储在哪里？内存还是磁盘？
+
+​	假设元数据存储在NameNode节点的磁盘中，因为经常需要进行随机访问，还有响应客户端请求，效率就非常低。如果元数据存储在内存中，数据可靠性就不能得到保证，一旦服务宕机，元数据就丢失，会导致元数据丢失。<font color=red>**因此，就产生了FsImage，用FsImage在磁盘中备份元数据。**</font>
+
+​	但是，这样又有一个新问题，当在内存中的元数据更新时，如果同时更新FsImage，（如果随机读写）就会导致效率过低，但是如果不更新，就会发生一致性问题，一旦NameNode节点断电，就会产生数据丢失。<font color=red>**因此，引入Edits文件（只进行追加，效率很高）。用来存储元数据操作，每当元数据有更新或者添加元数据时，修改内存中的元数据并最佳到Edits中。**</font>这样，一旦NameNode节点断电，可以通过FsIamge和Edits的合并，合成元数据。
+
+​	但是，如果长时间添加数据到Edits中，会导致该文件数据过大，效率地下，而且一旦断电，恢复元数据需要的时间过长。因此，需要定期进行FsImage和Edits合并，如果这个操作由NameNode节点完成，又会效率过低。<font color=red>**因此，引入一个新得节点SecodaryNameNode，专门用于FsImage和Edits的合并。**</font>
+
+
+
+#### 5.5.1  Fsimage和Edits概念
+
+- **FsImage文件：** HDFS文件系统元数据的有一个<font color=red>**永久性的检查点**</font>，其中包含HDFS文件系统的所以有目录和文件inode的序列化信息。
+- **Edits文件：**存放HDFS文件系统的所有更新操作和路径，文件系统客户端执行的所以也有写操作首先会被记录到Edits文件中
+- **seen_txid：**除了以上两个文件之外，该文件也在$HADOOP_HOME/data/tmp/dfs/name/current目录下，seen_txid保存的是一个数字，就是最后一个edits_对应的数字
+
+
+
+
+#### 5.5.2  工作机制
+
+![NN&2NN工作机制](../Hadoop/img/NN和2NN工作机制.png)
+
+- **第一阶段：NameNode启动**
+
+  ① 第一次启动NameNode格式化后，创建Fsimage和Edits文件。如果不是第一次启动，直接加载镜像文件Fsimage和编辑日志到内存。
+
+  ② 客户端对元数据进行增删改的请求
+
+  ③ NameNode 记录操作日志，更新滚动日志
+
+  ④ NameNode 在内存中对元数据进行增删改
+
+- **第二阶段：SecondaryNameNode工作**
+
+  ① SecondaryNameNode询问NameNode是否需要CheckPoint。直接带回NameNode是否检查结果
+
+  ② SecondaryNameNode请求执行CheckPoint。
+
+  ③ NameNode滚动正在写的Edits文件。
+
+  ④ 将滚动前的编辑日志和镜像文件拷贝到SecondaryNameNode
+
+  ⑤ SecondaryNameNode加载编辑日志和镜像文件到内存，并合并
+
+  ⑥ 生成新的镜像文件fsimage.chkpoint
+
+  ⑦ 拷贝fsimage.chkpoint到NameNode
+
+  ⑧ NameNode将fsimage.chkpoint重命名为fsimage，替换原有的fsimage
+
+  
 
 ### 5.6  DataNode工作机制
 
