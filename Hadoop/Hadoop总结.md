@@ -293,10 +293,39 @@ Distance（r1-1，r4-0） = 6 （不同机房或数据中心的节点）
 
 ### 5.6  DataNode工作机制
 
+​	一个数据块（Block）在DataNode上以文件形式存储在磁盘上，包括两个文件，一个是数据本身，一个是元数据包括数据块的长度、块数据、校验和以及时间戳。
+
+![DataNode工作机制](../Hadoop/img/DataNode工作机制.jpg)
+
+① DataNode启动后会向NameNode注册，告诉NameNode，自身节点上有哪些活着的块信息。
+
+② NameNode接收到DataNode的注册信息后，会把对应的信息记录在元数据里面。然后返回注册成功。
+
+③ 注册通过后，周期性（6小时）向NameNode上报所有的块信息。（以确保块信息的状态是否完好等）
+
+​	这里涉及到两个参数：
+
+```xml
+<!-- DataNode 向NameNode汇报当前节点信息的时间间隔，默认6小时 -->
+<property>
+	<name>dfs.blockreport.intervalMsec</name>
+    <value>21600000</value>
+</property>
+<!-- DataNode 扫描自己节点块信息列表的时间,自查块信息是否损坏等，默认6小时 -->
+<property>
+    <name>dfs.datanode.directoryscan.interval</name>
+    <value>21600s</value>
+</property>
+```
+
+④ DataNode会和nameNode保持心跳，每3秒一次，心跳返回结果带有NameNode给该DataNode的命令（如复制块数据到另一台节点或删除某数据块）。
+
+⑤ 如果超过10分钟+30秒（<font color=red>2\*dfs.namenode.heartbeat.recheck-interval + 10\*dfs.heartbeat.interval</font>）没有收到某个节点的心跳，则任务该节点不可用。
 
 
 
-## 六.  Hadoop 概述
+
+## 六.  MapReduce
 
 
 
