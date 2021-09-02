@@ -401,11 +401,93 @@ Distance（r1-1，r4-0） = 6 （不同机房或数据中心的节点）
 
 ### 6.3  核心框架原理
 
+![MapReduce](../Hadoop/img/mr.png)
+
 #### 6.3.1  InputFormat 数据输入
 
 ##### 6.3.1.1  切片与MapTask并行度决定机制
 
-​	MapTask的并行度决定Map阶段的任务处理并发度，进而应先到整个Job的处理速度。
+  MapTask的并行度决定Map阶段的任务处理并发度，进而应先到整个Job的处理速度。1G的数据，启动8个MapTask，可以提高集群的并发处理能力。那么1k的数据，也启动8个MapTask，并不会提高集群的性能，开启每个任务的时间都比计算的时间要长，开启map任务需要一些准备工作，比如内存初始化。
+
+![map](../Hadoop/img/map.png)
+
+**MapTask并行度决定机制：**
+
+-  **数据块：**Block是HDFS物理上把数据分成 一块一块。数据块是HDFS存储数据单位。
+-  **数据切片：**数据切片只是在逻辑上对输入进行分片，并不会在磁盘上将其切分成片进行存储。<font color=red>**数据切片是MapReduce程序计算输入数据的单位**</font>，一个切片会对应启动一个MapTask
+
+假设切片大小设置为100m时，
+
+![切片与task](../Hadoop/img/切片与task.png)
+
+第一个MapTask的数据的Node1，从0~100m，第二个MapTask从100~200m，第三个MapTask从200~300m，此时数据在两台节点上，因此需要跨服务器通信，效率就比较低了。
+
+假设切片大小设置为128m。
+
+![切片与task](../Hadoop/img/切片与task1.png)
+
+每个切片的数据都在本地，每个任务直接从本地获取数据，效率更高。
+
+
+
+<font color=red>**① 一个Job的Map阶段并行度由客户端在提交Job时的切片数决定**</font>
+
+② 每一个split切片分配MapTask并行实例处理
+
+③ 默认情况下，切片大小=blockSize
+
+④ 切片时不考虑数据集整体，而是逐个针对每一个文件单独切片。
+
+![切片与task](../Hadoop/img/切片与task2.png)
+
+
+
+##### <font color=red>6.3.1.2  Job 提交流程源码与切片源码详解</font>
+
+**核心提交流程源码：**
+
+```java
+// 入口
+waitForCompletion();
+// 提交
+	submit();
+		// 确保状态正确与新旧api适配 (非重点)
+		ensureState(JobState.DEFINE);
+		setUseNewApi();
+
+        // 1. 建立连接
+        connect();
+			// 创建提交Job的代理
+			new Cluster(getConfiguration());
+				// 1) 判断时本地运行环境还是yarn集群运行环境
+				initialize(jobTrackAddre,conf);
+
+		// 2. 提交Job
+		// 检查job输出路径 (非重点)
+		checkSpecs(job);
+		submitter.submitJobInternal(Job.this,cluster);
+			// 1) 创建给集群提交数据的Stag路径(临时路径) 例： /tmp/hadoop/mapred/staging/o12xxx/.staging
+			Path jobStagingArea = JobSubmissionFiles.getStagingDir(cluster,conf);
+			// 2) 获取jobid，并创建job路径 /tmp/hadoop/mapred/staging/o12xxx/.staging + /job_jobid
+			JobId jobid = submitClient.getNewJobId();
+			job.setJobId(jobId);
+			Path submitJobDir = new Path(jobStagingArea,jobId.toString());
+			// 3) 拷贝jar包到集群 (本地模式不拷贝jar包)
+			copyAndConfigureFiles(job,submitJobDir);
+			rUploader.uploadResources(job,jobSubmitDir);
+			// 4) 计算分片，生成切片规划文件
+			writeSplits(job,submitJobDir);
+				maps = writeNewSplits(job,submitJobDir);
+				input.getSplits(job);
+			// 5) 向Stag路径写入xml配置文件
+			writeConf(conf,submitJobFile);
+				conf.writeXml(out);
+			// 6) 提交job，返回状态信息
+			status = submitClient.submitJob(jobId,submitJobDir.toString(),job.getCredentials());
+```
+
+![提交流程源码](../Hadoop/img/提交流程源码图解.jpg)
+
 
 
 #### 6.3.2  MapReduce工作流程
