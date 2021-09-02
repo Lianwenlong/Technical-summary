@@ -490,6 +490,9 @@ waitForCompletion();
 
 
 
+##### <font color=red>6.3.1.2  FileInputFormat 切片源码解析（input.getSplits(job)）</font>
+
+
 #### 6.3.2  MapReduce工作流程
 
 #### 6.3.3  Shuffle 机制
