@@ -465,6 +465,7 @@ waitForCompletion();
 		// 2. 提交Job
 		// 检查job输出路径 (非重点)
 		checkSpecs(job);
+		// 提交过程 (重点！！！！)
 		submitter.submitJobInternal(Job.this,cluster);
 			// 1) 创建给集群提交数据的Stag路径(临时路径) 例： /tmp/hadoop/mapred/staging/o12xxx/.staging
 			Path jobStagingArea = JobSubmissionFiles.getStagingDir(cluster,conf);
