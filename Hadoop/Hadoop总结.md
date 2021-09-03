@@ -462,36 +462,80 @@ waitForCompletion();
 				// 1) 判断时本地运行环境还是yarn集群运行环境
 				initialize(jobTrackAddre,conf);
 
-		// 2. 提交Job
-		// 检查job输出路径 (非重点)
-		checkSpecs(job);
-		// 提交过程 (重点！！！！)
-		submitter.submitJobInternal(Job.this,cluster);
-			// 1) 创建给集群提交数据的Stag路径(临时路径) 例： /tmp/hadoop/mapred/staging/o12xxx/.staging
-			Path jobStagingArea = JobSubmissionFiles.getStagingDir(cluster,conf);
-			// 2) 获取jobid，并创建job路径 /tmp/hadoop/mapred/staging/o12xxx/.staging + /job_jobid
-			JobId jobid = submitClient.getNewJobId();
-			job.setJobId(jobId);
-			Path submitJobDir = new Path(jobStagingArea,jobId.toString());
-			// 3) 拷贝jar包到集群 (本地模式不拷贝jar包)
-			copyAndConfigureFiles(job,submitJobDir);
-			rUploader.uploadResources(job,jobSubmitDir);
-			// 4) 计算分片，生成切片规划文件
-			writeSplits(job,submitJobDir);
-				maps = writeNewSplits(job,submitJobDir);
-				input.getSplits(job);
-			// 5) 向Stag路径写入xml配置文件
+	    // 2. 提交Job
+	    // 检查job输出路径 (非重点)
+	    checkSpecs(job);
+	    // 提交过程 (重点！！！！)
+	    submitter.submitJobInternal(Job.this,cluster);
+		    // 1) 创建给集群提交数据的Stag路径(临时路径) 例： /tmp/hadoop/mapred/staging/o12xxx/.staging
+		    Path jobStagingArea = JobSubmissionFiles.getStagingDir(cluster,conf);
+		    // 2) 获取jobid，并创建job路径 /tmp/hadoop/mapred/staging/o12xxx/.staging + /job_jobid
+		    JobId jobid = submitClient.getNewJobId();
+		    job.setJobId(jobId);
+		    Path submitJobDir = new Path(jobStagingArea,jobId.toString());
+		    // 3) 拷贝jar包到集群 (本地模式不拷贝jar包)
+		    copyAndConfigureFiles(job,submitJobDir);
+		    rUploader.uploadResources(job,jobSubmitDir);
+		    // 4) 计算分片，生成切片规划文件,并设置maps个数
+		    int keyLen = writeSplits(job,submitJobDir);
+			    maps = writeNewSplits(job,submitJobDir);
+			    input.getSplits(job);
+            conf.setInt("mapreduce.job.maps", keyLen);
+		    // 5) 向Stag路径写入xml配置文件
 			writeConf(conf,submitJobFile);
 				conf.writeXml(out);
-			// 6) 提交job，返回状态信息
-			status = submitClient.submitJob(jobId,submitJobDir.toString(),job.getCredentials());
+		    // 6) 提交job，返回状态信息
+		    status = submitClient.submitJob(jobId,submitJobDir.toString(),job.getCredentials());
 ```
 
 ![提交流程源码](../Hadoop/img/提交流程源码图解.jpg)
 
 
 
-##### <font color=red>6.3.1.2  FileInputFormat 切片源码解析（input.getSplits(job)）</font>
+**FileInputFormat 切片源码解析（input.getSplits(job))**
+
+```java
+writeSplits(job, submitJobDir);
+	writeNewSplits(job,jobSubmitDir);
+		input.getSplits(job);
+			// (1和mapreduce.input.fileinputformat.split.minsize的最小值
+	        long minSize = Math.max(this.getFormatMinSplitSize(), getMinSplitSize(job));
+			// mapreduce.input.fileinputformat.split.maxsize。没设置默认long数值最大值
+	        long maxSize = getMaxSplitSize(job);
+
+            // 1) 先找到数据存储的目录
+            this.listStatus(job);
+            Iterator i$ = files.iterator();
+            // 2) 遍历处理(规划切片)目录下的每一个文件
+            while(i$.hasNext()) {
+                // a. 获取文件大小
+                long length = file.getLen();
+                // b. 计算切片大小，默认情况下切片大小为blocksize
+                this.computeSplitSize(blockSize, minSize, maxSize);
+                	Math.max(minSize, Math.min(maxSize, blockSize));
+                // c. 开始切片，每次切片都要判断剩下的部分是否大于block的1.1倍，不大于1.1倍就划到一块切片
+                for(bytesRemaining = length; (double)bytesRemaining / (double)splitSize > 1.1D; bytesRemaining -= splitSize) {
+                                // d. 将切片信息写到一个切片规划文件中
+                                // e. 整个切片的核心过程都在getSplit()方法中完成
+                                // g. InputSplit只记录了切片的元数据信息，比如起始位置、长度以及所在节点列表等
+                                blkIndex = this.getBlockIndex(blkLocations, length - bytesRemaining);
+                                splits.add(this.makeSplit(path, length - bytesRemaining, splitSize, blkLocations[blkIndex].getHosts(), blkLocations[blkIndex].getCachedHosts()));
+                            }
+            }
+			// 3.提交切片规划文件到Yarn上，yarn上的MAppMaster就可以根据切片规划文件计算开启MapTask个数。
+```
+
+<font color=red>**强调：**</font>
+
+<font color=red>	**① 默认情况下，切片大小=blockSize**</font>
+
+<font color=red>	**② 每次切片时，都要判断切完剩下的部分是否大于块的1.1倍。不大于时，直接划分为一块。**</font>
+
+<font color=red>	**③ InputSplit只记录切片的元数据信息，比如其实位置、长度及所在节点等。**</font>
+
+<font color=red>	**④ 提交切片规划文件到Yarn上，Yarn上的MrAppMaster根据切片规划文件计算开启MapTask任务。几个切片就几个任务。**</font>
+
+
 
 
 #### 6.3.2  MapReduce工作流程
