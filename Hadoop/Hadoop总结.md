@@ -399,7 +399,7 @@ Distance（r1-1，r4-0） = 6 （不同机房或数据中心的节点）
 
 ### 6.2  序列化
 
-### 6.3  核心框架原理
+### 6.3  核心框架原理（重点）
 
 ![MapReduce](../Hadoop/img/mr.png)
 
@@ -537,14 +537,223 @@ writeSplits(job, submitJobDir);
 
 
 
+**FileInputFormat切片大小的参数配置：**
 
-#### 6.3.2  MapReduce工作流程
+```java
+Math.max(minSize,Math.min(maxSize,blockSize));
+
+// minSize -> mapreduce.input.fileinputformat.split.minsize = 1 默认值1
+// maxSize -> mapreduce.input.fileinputformat.split.maxsize = Long.MAXValue 默认值Long.MAXValue
+// 默认情况下，切片为blockSize
+
+// 调小切片：设置maxSize比blockSize小
+// 调大切片：设置minSize比blockSize大
+```
+
+
+
+**获取切片信息API**
+
+// 获取切片的文件名称
+
+String name = inputSplit.getPath().getName();
+
+// 根据文件类型获取切片信息
+
+FileSplit inputSplit = (FileSplit) context.getInputSplit();
+
+
+
+##### 6.3.1.3  TextInputFormat 
+
+##### 6.3.1.4  CombineTextInputFormat切片机制（小文件切片处理）
+
+​	框架默认的TextInputFormat切片机制是对任务按文件规划切片，<font color=red>**不管文件多小，都会是一个单独的切片，都会交给一个MapTask，如果有大量小文件，就会产生大量的MapTask，处理效率极其低下。**</font>
+
+① 应用场景
+
+​	combineTextInputFormat用于小文件过多的场景，它可以将多个小文件从逻辑上规划到一个切片中，这样，多个小文件就可以交给一个MapTask处理。
+
+② 虚拟存储切片最大值设置
+
+​	CombineTextInputFormat.setMaxInputSplitSize(job，419430)；// 4m
+
+​	注意：虚拟存储切片最大值设置最好根据实际的小文件大小情况来设置具体的值。
+
+③ 切片机制
+
+​	生成切片过程包括：虚拟存储过程和切片过程两部分。
+
+（1）虚拟存储过程：
+
+将输入目录下所有文件大小，依次和设置的setMaxInputSplitSize值比较，如果不大于设置的最大值，逻辑上划分一个块。如果输入文件大于设置的最大值且大于两倍，那么以最大值切割一块；当剩余数据大小超过设置的最大值且不大于最大值2倍，此时将文件均分成2个虚拟存储块（防止出现太小切片）。
+
+例如setMaxInputSplitSize值为4M，输入文件大小为8.02M，则先逻辑上分成一个4M。剩余的大小为4.02M，如果按照4M逻辑划分，就会出现0.02M的小的虚拟存储文件，所以将剩余的4.02M文件切分成（2.01M和2.01M）两个文件。
+
+（2）切片过程：
+
+（a）判断虚拟存储的文件大小是否大于setMaxInputSplitSize值，大于等于则单独形成一个切片。
+
+（b）如果不大于则跟下一个虚拟存储文件进行合并，共同形成一个切片。
+
+（c）**测试举例：有4个小文件大小分别为1.7M、5.1M、3.4M以及6.8M这四个小文件，则虚拟存储之后形成6个文件块，大小分别为：**
+
+**1.7M，（2.55M、2.55M），3.4M以及（3.4M、3.4M）**
+
+**最终会形成3个切片，大小分别为：**
+
+**（1.7+2.55）M，（2.55+3.4）M，（3.4+3.4）M**
+
+
+
+#### 6.3.2  MapReduce工作流程图解
+
+![mr工作流程](../Hadoop/img/mapreduce工作流程1.png)
 
 #### 6.3.3  Shuffle 机制
 
-#### 6.3.4  OutputFormat 数据输出
+​	Map方法之后，Reduce方法之前的数据处理过程称之为Shuffle。
+
+![shuffle机制](../Hadoop/img/shuffle机制.png)
+
+① 数据先进入环形缓冲区（准确来讲先进入getPartition方法为数据打上分区标志），环形缓冲区默认100m，左侧存索引，右侧存数据，当存储到80%时，进行反向存储（从后往前在缓冲区写数据）。留时间给数据溢写到文件，从而达到高效运行。
+
+② 在数据溢写之前，会对数据进行排序，排序手段是快排。<font color=red>对key的索引按照字典排序。</font>
+
+③ 溢写回产生两个文件，一个是索引文件，一个是真正落地数据文件。溢写是可选对数据进行聚合combiner。
+
+④ 对溢写的文件进行归并和排序，然后还可以对数据进行压缩，最终数据写入磁盘，等待reduce拉去数据
+
+⑤ reduce拉去到数据后先尝试放到内存里，如果内存不够，溢写到磁盘
+
+⑥ 对数据进行归并、排序、分组，之后进入reduce方法。
+
+
+
+#### 6.3.4  OutputFormat 数据输出（todo）
 
 #### 6.3.5  MapReduce内核源码解析
+
+##### 6.3.5.1  MapTask工作机制
+
+​	MapTask主要分为五个阶段
+
+![shuffle机制](../Hadoop/img/shuffle机制.png)
+
+![map阶段工作机制](../Hadoop/img/Map阶段工作机制.png)
+
+​	① Read阶段：MapTask通过InputFormat获得的RecordReader，从输入InputSplit中解析出一个个 K/V。
+
+​	② Map阶段：该阶段主要是讲解析出来的K/V交给用户编写的map()函数处理，并产生一系列新的K/V。
+
+​	③ Collect收集阶段：在用户编写map()函数中，当数据处理完成后，一般会调用OutputCollector。collect()输出结果。在该函数内部，它会将生成的K/V<font color=red>**分区**</font>，并写入一个环形内存缓冲区中。
+
+​	④ 溢写阶段：当环形缓冲区满后，MapReduce会将数据写到本地磁盘上，生成一个临时文件。需要注意的是，将数据写入本地磁盘之前，先要对数据进行一次本地排序，并在必要时对数据进行合并、压缩操作。
+
+​		1）利用快速排序算法对缓冲区内的数据进行排序，排序方式是，先按照分区编号进行排序，然后按照Key进行排序。这样，经过排序后，数据以分区为单位聚集在一起，且同一分区内所有的数据按照key有序。
+
+​		2）按照分区编号由小到大依次将每个分区中的数据写入任务工作目录下的临时文件output/spillN.out（N表示当前溢写次数）中。如果用户设置了combiner，则写入文件之前，对每个分区中的数据进行一次聚集操作。
+
+​		3）将分区数据的元信息写到内存索引数据结构SpillRecord中，其中每个分区的元信息包括在临时文件中的偏移量、压缩前数据大小和压缩后的数据大小。如果当前内存索引大小超过1m，则将内存索引写到文件output/spillN.out.index中。
+
+​	⑤ merge阶段：当所有数据处理完成后，MapTask对所有临时文件进行一次合并，生成一个大文件，并保存到文件output/file.out中，同时生成相应的索引文件output/file.out.index。在文件合并过程中，MapTask以分区为单位进行合并。对于某个分区，它将采用多轮递归合并的方式。每轮合并mapreduce.task.io.sort.factor(默认10)个文件，并将产生的文件重新加入带合并列表中，对文件排序后，重复以上过程，直到最终只有一个大文件。让每个MapTask最终只生成一个数据文件，可避免同时打开大量文件和同时读取大量小文件产生的随机读取带来的开销。
+
+
+
+##### 6.3.5.2  ReduceTask工作机制
+
+![reduce工作机制](../Hadoop/img/reduce阶段工作机制.png)
+
+​	①  Copy阶段：ReduceTask从各个MapTask上拷贝一片数据，并针对某一片数据，如果其大小超过一定阈值，则写到磁盘上，否则直接放到内存中。
+
+​	② Sort阶段：在远程拷贝数据的同时，ReduceTask启动了两个后台线程对内存和磁盘上的文件进行合并，以防止内存使用过多或磁盘上文件过多。按照MapReduce语义，用户编写reduce()函数输入数据是按key进行聚集的一组数据。为了将key相同的数据聚在一起，Hadoop采用了基于排序的策略。由各个MapTask已经实现对自己的处理结果进行了局部排序，因此，ReduceTask只需对所有数据进行一次归并排序即可。
+
+​	③ Reduce阶段：reduce()函数将计算结果写到HDFS上。
+
+
+
+##### 6.3.5.3 ReuceTask并行度决定机制
+
+​	MapTask并行度由切片个数决定，切片个数由输入文件和切片规则决定。ReduceTask的并行度同样影响整个Job的执行并发度和执行效率，但与MapTask的并发数由切片数决定不同，ReduceTask数量的决定是可以直接手动设置。
+
+```java
+// 默认值是1，手动设置为4
+job.setNumReduceTasks(4);
+```
+
+<font color=red>**注意：**</font>
+
+​	1）ReduceTask=0，表示没有Reduce阶段，输出文件个数和Map个数一致
+
+​	2）ReduceTask默认为1，所以输出文件个数为1个。
+
+​	3）如果数据分布不均匀，就有可能在Reduce阶段产生数据倾斜
+
+​	4）具体多少个ReduceTask，需要根据集群性能而定
+
+​	5）如果分区数不是1，但是ReduceTask为1，不执行分区过程。因为在MapTask的源码中，执行分区的前提是先判断ReduceNum个数是否大于1。不大于1，不执行分区。
+
+
+
+##### 6.3.5.4 MapTask源码解析
+
+```java
+// 自定义的map方法的写入
+context.write(k,NullWriable.get());
+	output.write(key,value);
+		// maptask 727行收集方法，进入两次
+		collector.collect(key,value,partitioner.getPartition(key,value,partitions));
+			// 默认分区器
+			HashPartitioner();
+		collect();
+		// MapTask map端所有的kv全部写出后会走下面的close方法
+			close;
+				// 溢出刷盘
+				collector.flush();
+					// 溢写排序
+					sortAndSpill();
+						// QuickSort 快排
+						sorter.sort();
+					// 合并文件
+					mergeParts();
+				// 收集器关闭，即将进入reduceTask
+				collector.close();
+```
+
+
+
+##### 6.3.5.5 ReduceTask源码解析
+
+```java
+if(isMapOrReduce())
+initialize(job,getJobId(),reporter,useNewApi);
+shuffleConsumerPlugin.init(shuffleContext);
+	totalMaps = job.getNumMapTasks();
+	// 合并方法
+	merge = createMergeManager(context);
+		// 内存合并
+		this.inMemoryMerger = createInMemoryMerger();
+		// 磁盘合并
+		this.onDiskMerger = new OnDiskMerger(this);
+rIter = shuffleConsumerPlugin.run();
+	// 开始抓取数据
+	eventFecher.start();
+	// 抓取结束
+	eventFetcher.shutDown();
+	// copy阶段完成
+	copyPhase.complete();
+	// 开始排序阶段
+	taskStatus.setPhase(TaskStatus.Phase.SORT)
+// 排序阶段完成
+sortPhase.complete();
+// 自定义的reduce
+reduce();
+	// reduce完成之前会最后调用一次cleanup方法
+	cleanup(context);
+```
+
+
+
 
 #### 6.3.6  Join 应用
 
