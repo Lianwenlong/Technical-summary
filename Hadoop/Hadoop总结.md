@@ -763,13 +763,213 @@ reduce();
 
 ### 6.4  数据压缩
 
+#### 6.4.1  概述
 
-## 七.  Hadoop 概述
+1）压缩的好处和坏处
 
-### 7.1  数据压缩
+​	优点：以减少磁盘IO、减少磁盘存储空间
+
+​	缺点：增加CPU开销
+
+2）压缩原则
+
+​	① 运算密集型的Job，少用压缩
+
+​	② IO密集型的Job，多用压缩
 
 
 
-## 八.  Hadoop 概述
+## 七.  Yarn
 
-### 8.1  数据压缩
+### 7.1  Yarn资源调度器
+
+​	Yarn是一个资源调度平台，<font color=red>负责为运算程序提供服务器运算资源，相当于一个分布式的操作系统平台</font>，而<font color=red>MapReduce</font>等运算程序则相当于运行于<font color=red>操作系统之上的应用程序。</font>
+
+#### 7.1.1  Yarn基础架构
+
+​	Yarn主要由ResourceManager、NodeManager、ApplicationMaster和Container等组件构成。
+
+![yarn基础架构](../Hadoop/img/Yarn基础架构.png)
+
+**1）ResourceManager（RM）：**
+
+​	① 处理客户端请求
+
+​	② 监控NodeManager
+
+​	③ 启动或监控ApplicationMaster
+
+​	④ 资源的分配和调度
+
+**2）Node Manager（NM）：**
+
+​	① 管理单节点上的资源
+
+​	② 处理来自ResourceManager的命令
+
+​	③ 处理来自ApplicationMaster的命令
+
+**3）ApplicationMaster（AM）：**
+
+​	① 为应用程序申请资源分配给内部的任务
+
+​	② 任务的监控与容错
+
+**4）Container：**
+
+​	Container是Yarn中的资源抽象，它封装了某个节点上多维度资源，<font color=red>如内存、CPU、磁盘、网络等。</font>
+
+
+
+#### <font color=red>7.1.2  Yarn工作机制（重点）</font>
+
+![yarn工作机制](../Hadoop/img/yarn工作机制.png)
+
+​	1）MR程序提交到客户端所在节点，YarnRunner向ResourceManager申请一个Application
+
+​	2）ResourceManager将该应用程序的资源路径返回给YarnRunnner
+
+​	3）该程序将运行所需要的资源提交到HDFS上
+
+​	4）资源提交完成后，向Resource Manager申请运行mrAppMaster
+
+​	5）ResourceManager将用户请求初始化成一个Task，放到缓存队列中
+
+​	6）其中一个NodeManager领取到Task任务。
+
+​	7）该NodeManager创建容器Container，并生成MRAppMaster
+
+​	8）Container从HDFS上拷贝资源到本地。
+
+​	9）MRAppMaster向ResourceManager申请运行MapTask资源
+
+​	10）ResourceManager将运行MapTask分配给其他的NodeManager，NodeManager领取任务并创建容器。
+
+​	11）MRAppMaster向接收到任务的NodeManager发送程序启动脚本，NodeManager启动MapTask处理数据
+
+​	12）MRAppMaster等待MapTask任务执行完成后，向ResourceManager申请容器，运行ReduceTask
+
+​	13）ReduceTask向MapTask获取相应分区的数据
+
+​	14）程序运行完成后，MRAppMaster会向ResourceManager申请注销资源
+
+
+
+#### 7.1.3  Job提交全过程（todo）
+
+#### 7.1.4  Yarn调度器和调度算法
+
+​	目前，Hadoop作业调度器主要有三种：FIFO、容量（CapacityScheduler）和公平（FairScheduler）。Apache Hadoop3.1.3默认的资源调度器是CapacityScheduler。CDH框架默认调度器是Fair Scheduler。
+
+##### 7.1.4.1  先进先出调度器（FIFO）
+
+​	FIFO调度器（First In First Out）：单队列，根据提交作业的先后顺序，先来先服务。
+
+![FIFO](../Haddoop/../Hadoop/img/FIFO调度.png)
+
+​	优点：简单易懂
+
+​	缺点：不支持多队列，生产环境很少使用
+
+
+
+##### 7.1.4.2  容量调度器
+
+​	容量调度器是Yahoo开发的多用户调度器。
+
+![容量调度器](../Haddoop/../Hadoop/img/容量调度器.png)
+
+**特点：**
+
+​	1）多队列：每个队列可配置一定的资源量，如上队列A占20%，队列B占50%，队列C占30%。队列C中两个用户ss和cl各占队列C50%，每个队列采用FIFO调度策略。优先满足先进来的任务，如果队列A资源有10G，那么job11占2个G，如果下一个任务占6G，那么第二个任务也可以同时执行，在一个队列中可同时启动多个任务。
+
+​	2）容量保证：管理员可为每个队列设置资源最低保证和资源使用上线。
+
+​	3）灵活性：如果一个队列中的资源有剩余，可以暂时共享给那些需要资源的队列，而一旦该队列有新的应用程序提交，则其他队列借调的资源会归还给该队列。
+
+​	4）多租户：支持多用户共享集群和多应用程序同时运行。为了防止同一个用户的作业独占队列中的资源，该调度器会对<font color=red>**同一用户提交的作业所占资源量进行限定。**</font>
+
+
+
+**调度算法：**
+
+![调度算法](../Hadoop/img/容量调度算法.png)
+
+**1）队列资源分配**
+
+​	从root开始，使用深度优先算法，<font color=red>**优先选择资源占用率最低**</font>的队列分配资源
+
+**2）作业资源分配**
+
+​	默认按照提交作业的<font color=red>**优先级和提交时间**</font>顺序分配资源。
+
+**3）容器资源分配**
+
+​	按照容器的<font color=red>**优先级**</font>分配资源；
+
+​	如果优先级相同，按照<font color=red>**数据本地行原则（节点距离最近）：**</font>
+
+​	① 任务和数据在同一节点
+
+​	② 任务和数据在同一机架
+
+​	③ 任务和数据不在同一节点也不在同一机架
+
+
+
+
+##### 7.1.4.3  公平调度器
+
+​	Fair Scheduler是FaceBook开发的多用户调度器。
+
+![公平调度器](../Haddoop/../Hadoop/img/公平调度器.png)
+
+**1）与容量调度器相同点**
+
+​	① 多队列：支持多队列多作业
+
+​	② 容量保证：管理员可为每个队列设置资源最低保证和资源使用上限
+
+​	③ 灵活性：如果一个队列中的资源有剩余，可以暂时共享给那些需要资源的队列，而一旦该队列有新的应用程序提交，则其他队列借调的资源会归还给该队列。
+
+​	④ 多租户：支持多用户共享集群和多应用程序同时运行该；为了防止同一个用户的作业独占队列中的资源，该调度器会对同一用户提交的作业所占资源量进行限定。
+
+**2）与容量调度器不同点**
+
+​	① 核心调度策略不同
+
+​		容量调度器：优先选择<font color=red>**资源利用率**</font>低的队列
+
+​		公平调度器：优先选择对资源的<font color=red>**缺额**</font>比较大的
+
+​		公平调度器设计目标是：在时间尺度0度器会优先为缺额大的作业分配资源
+
+  ![缺额](../Haddoop/../Hadoop/img/缺额.png)
+
+​	② 每个队列可以单独设置资源分配方式
+
+​		容量调度器：FIFO、DRF
+
+​		公平调度器：FIFO、DRF、FAIR
+
+​	
+
+<font color=red>**公平调度器队列资源分配方式：**</font>
+
+1）FIFO策略
+
+​	公平调度器每个队列资源分配策略如果选择FIFO的话，此时公平调度器相当于上面的容量调度器。
+
+2）Fair 策略
+
+​	Fair策略（默认）是一种基于最大最小公平算法实现的资源多路复用方式，默认情况下，每个队列内部采用该方式分配资源。这意味着，如果一个队列中有两个应用程序同时运行，则每个应用程序可得到1/2资源。如果三个应用程序同时运行，则每个应用程序可得到1/3的资源。
+
+具体资源分配流程和容量调度器一致：① 选择队列，② 选择作业，③ 选择容器，这三步，每一步都是按照公平策略分配资源。
+
+![资源分配](../Hadoop/img/公平调度资源分配.png)
+
+![资源分配算法](../Hadoop/img/公平调度资源分配算法.png)
+
+#### 7.1.5  Yarn常用命令
+
+#### 7.1.6  Yarn生产环境核心参数
