@@ -79,13 +79,3 @@
 
 ![软负载均衡](../Zookeeper/img/软负载均衡.png)
 
-
-## 一.  Hadoop 概述
-
-## 一.  Hadoop 概述
-
-## 一.  Hadoop 概述
-
-## 一.  Hadoop 概述
-
-## 一.  Hadoop 概述
