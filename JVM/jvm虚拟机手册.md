@@ -3004,3 +3004,82 @@ Full GC:
 ## 4. 性能监控与调优
 
 ![终极目标](../JVM/image/终极目标.png)
+
+### 4.1 监控及诊断工具-命令行
+
+#### 4.1.1  jps （Java Process Status）：查看正在运行的Java进程
+
+​	显示指定系统内所有的Hotspot虚拟机进程（查看虚拟机进程信息），可用于查询正在运行的虚拟机进程。
+
+```shell
+## 语法
+jps [options][hostip]
+
+## [options]
+-q : 仅显示LVMID(local virtual machine id)，即本地虚拟机唯一id。不显示主类的名称等
+
+-l : 输出应用程序主类的全类名或如果进程执行的是jar包，则输出jar完整路径
+
+-m : 输出虚拟机进程启动时传递给主类main()的参数
+
+-v : 列出虚拟机进程启动时的JVM参数。比如 -Xms20m -Xmx50m 是启动程序指定的jvm参数
+
+## 补充
+如果某个Java进程关闭了默认开启的UsePerfData参数（即使用参数 -XX:-UsePerfData），那么jps命令（及jstat）将无法探知该Java进程
+
+## [hostip]
+RMI注册表中的主机名。如果想要远程监控主机上的java程序，需要安装jstatd
+对于具有更严格的安全实践的网络场所而言，可能使用一个自定义的策略文件来显示对特定的可信主机或网络的访问，尽管这种技术容易受到IP地址欺诈攻击
+如果安全问题无法使用一个定制的策略文件来处理，那么最安全的操作是不运行jstatd服务器，而是在本地使用jstat喝jps工具。
+```
+
+
+
+#### 4.1.1  jstat （JVM Statistics Monitoring Tool）：查看JVM统计信息
+
+​	用于监视虚拟机各种运行状态信息的命令行工具。它可以显示本地或者远程虚拟机进程中的<font color=red>**类装载、内存、垃圾收集、JIT编译等运行数据。常用于检测垃圾回收问题以及内存泄漏问题。**</font>
+
+```shell
+## 语法
+jstat -<option> [-t][-h<lines>] <vmid> [<interval> [<count>] ]
+## 查看命令相关参数
+jstat -h 或 jstat -help
+
+vmid : 进程id
+
+interval : 用于指定输出统计数据的周期，单位为毫秒。即：查询间隔
+
+count : 用于指定查询的总次数
+
+-t : 在输出信息上加一个Timestamp列，显示程序运行时间（程序从开始现在执行的总时间），单位秒
+
+-h : 可以在周期性数据输出时，输出多少行数据后，输出一个表头信息
+
+ex: jstat -class -t -h3 3455 1000 10
+
+-<option>
+
+## 类加载相关
+-class : 显示ClassLoader的相关信息： 类的装载、卸载数量、总空间、类装载所耗时间等
+
+## 垃圾回收相关
+-gc : 显示与gc相关的对信息。 包括 Eden、Survivor、老年代、永久代等的容量、已用空间、GC时间合计等信息
+
+-gccapacity : 显示内容与 -gc 基本相同，但输出主要关注Java堆各个区域使用到的最大、最小空间
+
+-gcutil : 显示内容与 -gc 基本相同，但输出主要关注已使用空间占总空间的百分比
+
+-gccause : 与 -gcutil 功能一样，但是会额外输出导致最后一次或当前正在发生的GC产生的原因
+
+-gcnew : 显示新生代GC情况
+
+-gcnewcapacity : 显示内容与 -gcnew 基本相同，输出主要关注使用到的最大、最小空间
+
+-gcold : 显示老年代GC情况
+
+## JIT相关：
+-compiler : 显示JIT编译器编译过的方法、耗时等信息
+
+-printcompilation : 输出已经被JIT编译的方法
+```
+
