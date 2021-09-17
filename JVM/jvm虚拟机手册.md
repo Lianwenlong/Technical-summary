@@ -3035,7 +3035,7 @@ RMI注册表中的主机名。如果想要远程监控主机上的java程序，�
 
 
 
-#### 4.1.1  jstat （JVM Statistics Monitoring Tool）：查看JVM统计信息
+#### 4.1.2  jstat （JVM Statistics Monitoring Tool）：查看JVM统计信息
 
 ​	用于监视虚拟机各种运行状态信息的命令行工具。它可以显示本地或者远程虚拟机进程中的<font color=red>**类装载、内存、垃圾收集、JIT编译等运行数据。常用于检测垃圾回收问题以及内存泄漏问题。**</font>
 
@@ -3082,4 +3082,203 @@ ex: jstat -class -t -h3 3455 1000 10
 
 -printcompilation : 输出已经被JIT编译的方法
 ```
+
+**应用：**
+
+**排查OOM：**
+
+​	我们可以比较Java进程的启动时间以及总的GC时间，或者两次测量的时间间隔以及总GC时间内的增量，来得出GC时间占运行时间的比例。检测间隔内第一列时间差为程序运行总时间，最后一列为GC总时间。如果该比例超过20%，则说明目前堆的压力较大，如果该比例超过90%，则说明堆里几乎没有可用空间，随时都可能抛出OOM异常。
+
+![jstat](../JVM/image/jstat.png)
+
+**检测内存泄漏：**
+
+​	在长时间运行的Java程序中，我们可以以运行jstat命令连续获取多行性能数据，并取数据中OU列（老年代已占用内存）的最小值。然后每个一段较长的时间重复有一次上述操作，来获得多组OU最小值。如果这些值呈上涨趋势，则说明该Java程序的老年代内存也已使用量不断上涨，这也意味着无法回收的对象在不断增加，因此很有可能存在内存泄漏。
+
+
+
+#### 4.1.3  jinfo（Configuration Info for Java）：实时查看和修改JVM配置参数、
+
+​	查看虚拟机配置参数信息，也可用于调整虚拟机的配置参数。
+
+​	在多数情况下，Java程序不会指定所有的Java虚拟机参数。
+
+```shell
+## 语法
+jinfo [option] <pid>
+
+## 查看
+jinfo -sysprops pid		查看由 System.getProperties()取得的参数
+
+jinfo -flags pid		查看曾经赋过值的一些参数
+
+jinfo -flag 具体参数 pid	查看某个进程的具体参数值
+
+## 修改
+jinfo -flag [+|-]具体参数 pid
+
+jinfo -flag 具体参数=value pid
+```
+
+
+
+#### 4.1.4  jmap（JVM Memory Map）：导出内存映像文件和内存使用情况
+
+​	作用一方面是获取dump文件（堆转储快照文件，二进制文件），它还可以获取目标Java进程的内存相关信息。包括Java堆各区域的使用情况、队中兑现那个的统计信息、类加载信息等。
+
+```shell
+## 语法
+jmap [option] pid
+jmap [option] <executable><core>
+jmap [option] [server_id@]<remote server Ip or hostname>
+
+[option]
+##常用
+-dump 			生成Java堆转存快照（dump文件）
+-dump:live		只保存队中的存活对象
+
+-heap			输出整个堆空间的详细信息，包括GC的使用、堆配置信息，以及你内存的使用信息等
+
+-histo			输出队中对象的统计信息，包括类、实例数量和合计容量
+-histo:live		只统计队中的存活对香港
+
+## 较少使用
+-permstat		以ClassLoader为统计口径输出永久代的内存状态信息（仅在Linux/solaris平台有效）
+-finalizerinfo	显示F-Queue中等待Finalizer线程执行finalize方法的对象（仅在Linux/Solaris平台有效）
+-F			   当虚拟机进程堆 -dump 选项没有任何响应时，可使用此选项强制执行生成dump文件（仅在Linux/Solaris平台有效）
+-h/-help	    jmap工具使用的帮助命令
+-j <flag>		传递参数给jmap启动jvm
+```
+
+**应用：**
+
+**导出dump文件：**
+
+① 手动方式： 
+
+jmap -dump:format=b,file=<filenname.hprof> pid
+
+jmap -dump:live,format=b,file=<filenname.hprof> pid
+
+② 自动方式：
+
+-XX:+HeapDumpOnOutOfMemoryError
+
+-XX:HeapDumpPath=<filename.hprof>
+
+通常在写Heap Dump文件前会触发一次FullGC，所以heap dump文件里保存的都是FullGC后留下的对象信息。生成dump文件比较耗时，尤其是大内存镜像生成dump文件内则需要耗费更长的时间来完成。
+
+**显示堆内存相关信息（当前时刻的）：**
+
+**jmap -heap pid**
+
+```shell
+[root@br-alert-dev-37 ~]# jps 
+11286 Jps
+700 WrapperSimpleApp
+16303 JarLauncher
+[root@br-alert-dev-37 ~]# 
+[root@br-alert-dev-37 ~]# jmap -heap 16303
+Attaching to process ID 16303, please wait...
+Debugger attached successfully.
+Server compiler detected.
+JVM version is 25.171-b11
+
+using parallel threads in the new generation.
+using thread-local object allocation.
+Concurrent Mark-Sweep GC
+
+Heap Configuration:
+   MinHeapFreeRatio         = 40
+   MaxHeapFreeRatio         = 70
+   MaxHeapSize              = 1073741824 (1024.0MB)
+   NewSize                  = 174456832 (166.375MB)
+   MaxNewSize               = 174456832 (166.375MB)
+   OldSize                  = 899284992 (857.625MB)
+   NewRatio                 = 2
+   SurvivorRatio            = 8
+   MetaspaceSize            = 21807104 (20.796875MB)
+   CompressedClassSpaceSize = 1073741824 (1024.0MB)
+   MaxMetaspaceSize         = 17592186044415 MB
+   G1HeapRegionSize         = 0 (0.0MB)
+
+Heap Usage:
+New Generation (Eden + 1 Survivor Space):
+   capacity = 157024256 (149.75MB)
+   used     = 87782528 (83.7159423828125MB)
+   free     = 69241728 (66.0340576171875MB)
+   55.90380125730384% used
+Eden Space:
+   capacity = 139591680 (133.125MB)
+   used     = 86208352 (82.21469116210938MB)
+   free     = 53383328 (50.910308837890625MB)
+   61.75751448796948% used
+From Space:
+   capacity = 17432576 (16.625MB)
+   used     = 1574176 (1.501251220703125MB)
+   free     = 15858400 (15.123748779296875MB)
+   9.030082530545112% used
+To Space:
+   capacity = 17432576 (16.625MB)
+   used     = 0 (0.0MB)
+   free     = 17432576 (16.625MB)
+   0.0% used
+concurrent mark-sweep generation:
+   capacity = 899284992 (857.625MB)
+   used     = 69205040 (65.99906921386719MB)
+   free     = 830079952 (791.6259307861328MB)
+   7.695562654291466% used
+
+32065 interned Strings occupying 3483112 bytes.
+
+```
+
+**jmap -histo pid**
+
+```shell
+[root@br-alert-dev-37 ~]# jmap -histo 16303
+num     #instances         #bytes  class name
+----------------------------------------------
+   1:         17504       24281904  [B
+   2:        176869       16925896  [C
+   3:        129160        5020944  [Ljava.lang.Object;
+   4:        101969        4894512  java.util.HashMap
+   5:        151968        4862976  java.util.HashMap$Node
+   6:        165716        3977184  java.lang.String
+   7:         34343        3407536  [Ljava.util.HashMap$Node;
+   8:          8745        2836992  [I
+   9:         85552        2737664  java.util.concurrent.ConcurrentHashMap$Node
+  10:         28308        2491104  java.lang.reflect.Method
+  11:         72135        2308320  java.util.ArrayList$Itr
+  12:         82209        1973016  java.util.ArrayList
+  13:         30433        1704248  java.util.LinkedHashMap
+  14:         15204        1682704  java.lang.Class
+  15:         36178        1447120  java.util.HashMap$KeyIterator
+  16:         34946        1118272  com.mysql.cj.conf.BooleanProperty
+  17:         25468        1018720  java.util.LinkedHashMap$Entry
+  18:         35494         851856  org.apache.kafka.common.internals.PartitionStates$PartitionState
+  19:         18090         723600  java.util.HashMap$EntryIterator
+  20:           424         716336  [Ljava.util.concurrent.ConcurrentHashMap$Node;
+  21:         40530         648480  java.util.HashSet
+  22:         18100         584744  [J
+  23:         17831         570592  java.util.LinkedHashMap$LinkedKeyIterator
+  24:         17726         567232  java.util.concurrent.ConcurrentLinkedQueue$Itr
+  25:         35083         561328  java.lang.Object
+  26:         11420         548160  org.aspectj.weaver.reflect.ShadowMatchImpl
+  27:         16262         520384  com.mysql.cj.conf.StringProperty
+  28:         18099         400264  [Ljava.lang.Class;
+  29:         11420         365440  org.aspectj.weaver.patterns.ExposedState
+  30:         14827         355848  org.springframework.core.MethodClassKey
+  31:         10726         343232  com.mysql.cj.conf.IntegerProperty
+  32:         19478         311648  java.util.HashMap$KeySet
+  33:         18939         303024  java.util.LinkedHashMap$LinkedEntrySet
+  34:         18506         296096  java.util.HashMap$EntrySet
+  35:         17723         283568  org.apache.kafka.clients.consumer.KafkaConsumer$1
+  36:          8466         270912  java.util.concurrent.locks.AbstractQueuedSynchronizer$Node
+  37:          1961         235320  org.springframework.boot.loader.jar.JarEntry
+```
+
+由于jmap将访问堆中的所有对象，为了保证在此过程中不被应用线程干扰，jmap需要借助安全点机制，让所有线程停留在不改变堆中数据的状态。也就是说，由jmap导出的堆快照必定是安全点位置的。这可能导致基于该堆快照的分析结果存在偏差。
+
+举个例子，假设在编译生成的机器码中，某些对象的生命周期在两个安全点之间，那么 :live选项将无法探知到这些对象。另外，如果某个线程长时间无法跑到安全点，jmap将一直等下去。与前面的jstat则不同，垃圾回收器会主动将jstat所需要的数据保存至固定位置之中，而jstat只需直接读取即可。
 
