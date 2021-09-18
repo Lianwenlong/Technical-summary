@@ -91,8 +91,14 @@
     - [2.6 GC日志分析](#26-gc%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90)
   - [3. 字节码与类的加载](#3-%E5%AD%97%E8%8A%82%E7%A0%81%E4%B8%8E%E7%B1%BB%E7%9A%84%E5%8A%A0%E8%BD%BD)
   - [4. 性能监控与调优](#4-%E6%80%A7%E8%83%BD%E7%9B%91%E6%8E%A7%E4%B8%8E%E8%B0%83%E4%BC%98)
-
-
+    - [4.1 监控及诊断工具-命令行](#41-%E7%9B%91%E6%8E%A7%E5%8F%8A%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7-%E5%91%BD%E4%BB%A4%E8%A1%8C)
+      - [4.1.1  jps （Java Process Status）：查看正在运行的Java进程](#411--jps-java-process-status%E6%9F%A5%E7%9C%8B%E6%AD%A3%E5%9C%A8%E8%BF%90%E8%A1%8C%E7%9A%84java%E8%BF%9B%E7%A8%8B)
+      - [4.1.2  jstat （JVM Statistics Monitoring Tool）：查看JVM统计信息](#412--jstat-jvm-statistics-monitoring-tool%E6%9F%A5%E7%9C%8Bjvm%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF)
+      - [4.1.3  jinfo（Configuration Info for Java）：实时查看和修改JVM配置参数、](#413--jinfoconfiguration-info-for-java%E5%AE%9E%E6%97%B6%E6%9F%A5%E7%9C%8B%E5%92%8C%E4%BF%AE%E6%94%B9jvm%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0)
+      - [4.1.4  jmap（JVM Memory Map）：导出内存映像文件和内存使用情况](#414--jmapjvm-memory-map%E5%AF%BC%E5%87%BA%E5%86%85%E5%AD%98%E6%98%A0%E5%83%8F%E6%96%87%E4%BB%B6%E5%92%8C%E5%86%85%E5%AD%98%E4%BD%BF%E7%94%A8%E6%83%85%E5%86%B5)
+      - [4.1.5  jstack（JVM Stack Trace）：打印JVM中线程快照](#415--jstackjvm-stack-trace%E6%89%93%E5%8D%B0jvm%E4%B8%AD%E7%BA%BF%E7%A8%8B%E5%BF%AB%E7%85%A7)
+      - [4.1.6  jcmd：多功能命令行](#416--jcmd%E5%A4%9A%E5%8A%9F%E8%83%BD%E5%91%BD%E4%BB%A4%E8%A1%8C)
+      - [4.1.7  jstatd：远程主机信息收集](#417--jstatd%E8%BF%9C%E7%A8%8B%E4%B8%BB%E6%9C%BA%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86)
 
 # JVM 知识
 
