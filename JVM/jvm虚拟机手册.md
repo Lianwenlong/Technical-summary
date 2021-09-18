@@ -3282,3 +3282,438 @@ num     #instances         #bytes  class name
 
 举个例子，假设在编译生成的机器码中，某些对象的生命周期在两个安全点之间，那么 :live选项将无法探知到这些对象。另外，如果某个线程长时间无法跑到安全点，jmap将一直等下去。与前面的jstat则不同，垃圾回收器会主动将jstat所需要的数据保存至固定位置之中，而jstat只需直接读取即可。
 
+
+
+#### 4.1.5  jstack（JVM Stack Trace）：打印JVM中线程快照
+
+​	用于生成虚拟机指定进程<font color=red>当前时刻</font>的线程快照（虚拟机堆栈跟踪）。线程快照就是当前虚拟机内指定进程的每一条线程正在执行的方法堆栈集合。
+
+​	生成线程快照的作用：可用于定位线程出现长时间停顿的原因，如线程间死锁、死循环、请求外部资源导致的长时间等待等问题。这些都是导致线程长时间停顿的常见原因。当线程出现停顿时，就可以用jstack显示各个线程调用的堆栈情况。
+
+​	在thread dump中，要留意下面几种状态
+
+- <font color=red>**死锁， DeadLock（重点关注）**</font>
+- <font color=red>**等待资源，Waiting on condition（重点关注）**</font>
+- <font color=red>**等待获取监视器，Waiting on monitor entry（重点关注）**</font>
+- <font color=red>**阻塞，Blocked（重点关注）**</font>
+- 执行中，Runnable
+- 暂停，Suspended
+
+```shell
+## 语法
+jstack option pid
+
+option
+
+-F :	当正常输出的请求不被响应时，强制输出线程堆栈
+-l :	除堆栈外，显示关于锁的附加信息
+-m :	如果调用到本地方法的话，可以显示C/C++的堆栈
+-h :	帮助操作
+
+## jstack 管理远程进程的话，需要在远程程序的启动参数中增加：
+-Djava.rmi.server.hostname=xxx
+-Dcom.sun.management.jmxremote
+-Dcom.sun.management.jmxremote.port=8888
+-Dcom.sun.management.jmxremote.authenticate=false
+-Dcom.sun.management.jmxremote.ssl=false
+```
+
+**死锁举例：**
+
+```java
+package com.bigdata.lianwl.jvm;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author LianWL
+ * @date 2021年09月18日 22:48
+ */
+public class ThreadDeadLock {
+
+    public static void main(String[] args) {
+        StringBuilder s1 = new StringBuilder();
+        StringBuilder s2 = new StringBuilder();
+
+        new Thread(() -> {
+            synchronized (s1) {
+                s1.append("a");
+                s2.append("1");
+                try {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                synchronized (s2) {
+                    s1.append("b");
+                    s2.append("2");
+                    System.out.println(s1);
+                    System.out.println(s2);
+                }
+            }
+
+        }).start();
+
+        new Thread(() -> {
+            synchronized (s2) {
+                s1.append("c");
+                s2.append("3");
+
+                try {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                synchronized (s1) {
+                    s1.append("d");
+                    s2.append("4");
+                    System.out.println(s1);
+                    System.out.println(s2);
+                }
+            }
+
+        }).start();
+    }
+}
+```
+
+**jstack信息：**
+
+```shell
+C:\Users\sedra>jps
+6976 Launcher
+2708 Jps
+9844 ThreadDeadLock
+10280
+14204 Launcher
+
+C:\Users\sedra>jstack 9844
+2021-09-18 22:57:41
+Full thread dump Java HotSpot(TM) 64-Bit Server VM (25.261-b12 mixed mode):
+
+"DestroyJavaVM" #14 prio=5 os_prio=0 tid=0x00000205c81a9800 nid=0x2238 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+## 这里可以看到Thread-1现在是阻塞状态，等待获取锁 0x000000076b778cb0，持有锁 0x000000076b778cf8
+"Thread-1" #13 prio=5 os_prio=0 tid=0x00000205e5049800 nid=0x38c8 waiting for monitor entry [0x000000360ecff000]
+   java.lang.Thread.State: BLOCKED (on object monitor)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
+        - waiting to lock <0x000000076b778cb0> (a java.lang.StringBuilder)
+        - locked <0x000000076b778cf8> (a java.lang.StringBuilder)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
+        at java.lang.Thread.run(Thread.java:748)
+        
+## 这里可以看到Thread-0现在是阻塞状态，等待获取锁 0x000000076b778cf8，持有锁 0x000000076b778cb0
+"Thread-0" #12 prio=5 os_prio=0 tid=0x00000205e5048000 nid=0x2a28 waiting for monitor entry [0x000000360ebff000]
+   java.lang.Thread.State: BLOCKED (on object monitor)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
+        - waiting to lock <0x000000076b778cf8> (a java.lang.StringBuilder)
+        - locked <0x000000076b778cb0> (a java.lang.StringBuilder)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
+        at java.lang.Thread.run(Thread.java:748)
+
+"Service Thread" #11 daemon prio=9 os_prio=0 tid=0x00000205e4d14800 nid=0x8ec runnable [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C1 CompilerThread3" #10 daemon prio=9 os_prio=2 tid=0x00000205e4ccf800 nid=0x1cb4 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C2 CompilerThread2" #9 daemon prio=9 os_prio=2 tid=0x00000205e4cbe000 nid=0x1c04 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C2 CompilerThread1" #8 daemon prio=9 os_prio=2 tid=0x00000205e4cb6000 nid=0x3320 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C2 CompilerThread0" #7 daemon prio=9 os_prio=2 tid=0x00000205e4cb2000 nid=0x3b2c waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Monitor Ctrl-Break" #6 daemon prio=5 os_prio=0 tid=0x00000205e4cb0800 nid=0xf4 runnable [0x000000360e4fe000]
+   java.lang.Thread.State: RUNNABLE
+        at java.net.SocketInputStream.socketRead0(Native Method)
+        at java.net.SocketInputStream.socketRead(SocketInputStream.java:116)
+        at java.net.SocketInputStream.read(SocketInputStream.java:171)
+        at java.net.SocketInputStream.read(SocketInputStream.java:141)
+        at sun.nio.cs.StreamDecoder.readBytes(StreamDecoder.java:284)
+        at sun.nio.cs.StreamDecoder.implRead(StreamDecoder.java:326)
+        at sun.nio.cs.StreamDecoder.read(StreamDecoder.java:178)
+        - locked <0x000000076b8d55a8> (a java.io.InputStreamReader)
+        at java.io.InputStreamReader.read(InputStreamReader.java:184)
+        at java.io.BufferedReader.fill(BufferedReader.java:161)
+        at java.io.BufferedReader.readLine(BufferedReader.java:324)
+        - locked <0x000000076b8d55a8> (a java.io.InputStreamReader)
+        at java.io.BufferedReader.readLine(BufferedReader.java:389)
+        at com.intellij.rt.execution.application.AppMainV2$1.run(AppMainV2.java:61)
+
+"Attach Listener" #5 daemon prio=5 os_prio=2 tid=0x00000205e38e0000 nid=0x24fc waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Signal Dispatcher" #4 daemon prio=9 os_prio=2 tid=0x00000205e38df800 nid=0x530 runnable [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Finalizer" #3 daemon prio=8 os_prio=1 tid=0x00000205e38b6000 nid=0x17b0 in Object.wait() [0x000000360e1fe000]
+   java.lang.Thread.State: WAITING (on object monitor)
+        at java.lang.Object.wait(Native Method)
+        - waiting on <0x000000076b608ee0> (a java.lang.ref.ReferenceQueue$Lock)
+        at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:144)
+        - locked <0x000000076b608ee0> (a java.lang.ref.ReferenceQueue$Lock)
+        at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:165)
+        at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:216)
+
+"Reference Handler" #2 daemon prio=10 os_prio=2 tid=0x00000205e38ac800 nid=0x3928 in Object.wait() [0x000000360e0fe000]
+   java.lang.Thread.State: WAITING (on object monitor)
+        at java.lang.Object.wait(Native Method)
+        - waiting on <0x000000076b606c00> (a java.lang.ref.Reference$Lock)
+        at java.lang.Object.wait(Object.java:502)
+        at java.lang.ref.Reference.tryHandlePending(Reference.java:191)
+        - locked <0x000000076b606c00> (a java.lang.ref.Reference$Lock)
+        at java.lang.ref.Reference$ReferenceHandler.run(Reference.java:153)
+
+"VM Thread" os_prio=2 tid=0x00000205e3884000 nid=0x3130 runnable
+
+"GC task thread#0 (ParallelGC)" os_prio=0 tid=0x00000205c81c4000 nid=0x2ddc runnable
+
+"GC task thread#1 (ParallelGC)" os_prio=0 tid=0x00000205c81c5000 nid=0x1750 runnable
+
+"GC task thread#2 (ParallelGC)" os_prio=0 tid=0x00000205c81c6800 nid=0x38dc runnable
+
+"GC task thread#3 (ParallelGC)" os_prio=0 tid=0x00000205c81c8800 nid=0x3b4c runnable
+
+"GC task thread#4 (ParallelGC)" os_prio=0 tid=0x00000205c81c9800 nid=0xf40 runnable
+
+"GC task thread#5 (ParallelGC)" os_prio=0 tid=0x00000205c81cc800 nid=0x13c8 runnable
+
+"GC task thread#6 (ParallelGC)" os_prio=0 tid=0x00000205c81cd800 nid=0x39b4 runnable
+
+"GC task thread#7 (ParallelGC)" os_prio=0 tid=0x00000205c81ce800 nid=0x1b70 runnable
+
+"VM Periodic Task Thread" os_prio=2 tid=0x00000205e4d7f000 nid=0x724 waiting on condition
+
+JNI global references: 316
+
+## 这里堆当前问题的一个分析, Thread-1在等待Thread-0持有的锁，Thread-0等待Thread-1持有的锁导致死锁
+Found one Java-level deadlock:
+=============================
+"Thread-1":
+  waiting to lock monitor 0x00000205e38b3098 (object 0x000000076b778cb0, a java.lang.StringBuilder),
+  which is held by "Thread-0"
+"Thread-0":
+  waiting to lock monitor 0x00000205e38b5b38 (object 0x000000076b778cf8, a java.lang.StringBuilder),
+  which is held by "Thread-1"
+
+Java stack information for the threads listed above:
+===================================================
+"Thread-1":
+        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
+        - waiting to lock <0x000000076b778cb0> (a java.lang.StringBuilder)
+        - locked <0x000000076b778cf8> (a java.lang.StringBuilder)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
+        at java.lang.Thread.run(Thread.java:748)
+"Thread-0":
+        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
+        - waiting to lock <0x000000076b778cf8> (a java.lang.StringBuilder)
+        - locked <0x000000076b778cb0> (a java.lang.StringBuilder)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
+        at java.lang.Thread.run(Thread.java:748)
+
+Found 1 deadlock.
+```
+
+
+
+#### 4.1.6  jcmd：多功能命令行
+
+​	在JDK1.7以后，新增了一个命令行工具jcmd，它是一个多功能的工具，可以用来实现前面除了jstat之外所有命令的功能。比如：用它来导出堆、内存使用、查看Java进程、导出线程信息、执行GC、JVM运行时间等。jcmd拥有jmap的大部分功能，并且在Oracle的官方网站上也推荐使用jcmd命令代替jmap命令
+
+```shell
+## 语法
+jcmd -l :			列出所有的JVM进程
+jcmd pid help		针对指定的进程，列出支持的所有命令
+jcmd pid 具体命令	  显示指定进程的指令命令的数据
+```
+
+**举例：**
+
+```shell
+## 列出所有的JVM进程
+C:\Users\sedra>jcmd -l
+12548 sun.tools.jcmd.JCmd -l
+10280
+14504 org.jetbrains.jps.cmdline.Launcher D:/soft/IDEA2020.1.2/lib/jps-model.jar;D:/soft/IDEA2020.1.2/lib/jna.jar;D:/soft/IDEA2020.1.2/lib/maven-model-3.6.1.jar;D:/soft/IDEA2020.1.2/lib/annotations.jar;D:/soft/IDEA2020.1.2/lib/maven-resolver-impl-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/netty-transport-4.1.47.Final.jar;D:/soft/IDEA2020.1.2/lib/maven-builder-support-3.6.1.jar;D:/soft/IDEA2020.1.2/lib/protobuf-java-3.5.1.jar;D:/soft/IDEA2020.1.2/lib/trove4j.jar;D:/soft/IDEA2020.1.2/lib/gson-2.8.6.jar;D:/soft/IDEA2020.1.2/lib/oro-2.0.8.jar;D:/soft/IDEA2020.1.2/lib/log4j.jar;D:/soft/IDEA2020.1.2/plugins/java/lib/jps-builders-6.jar;D:/soft/IDEA2020.1.2/lib/asm-all-7.0.1.jar;D:/soft/IDEA2020.1.2/lib/platform-api.jar;D:/soft/IDEA2020.1.2/lib/netty-common-4.1.47.Final.jar;D:/soft/IDEA2020.1.2/lib/forms-1.1-preview.jar;D:/soft/IDEA2020.1.2/lib/maven-resolver-spi-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/jna-platform.jar;D:/soft/IDEA2020.1.2/plugins/java/lib/maven-resolver-transport-http-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/slf4j-api-1.7.25
+6584 com.bigdata.lianwl.jvm.ThreadDeadLock
+10348 org.jetbrains.kotlin.daemon.KotlinCompileDaemon --daemon-runFilesPath C:\Users\sedra\AppData\Local\kotlin\daemon --daemon-autoshutdownIdleSeconds=7200 --daemon-compilerClasspath D:\soft\IDEA2020.1.2\plugins\Kotlin\kotlinc\lib\kotlin-compiler.jar;C:\Java\jdk1.8.0_261\lib\tools.jar;D:\soft\IDEA2020.1.2\plugins\Kotlin\kotlinc\lib\kotlin-daemon.jar
+14204 org.jetbrains.jps.cmdline.Launcher D:/soft/IDEA2020.1.2/lib/jps-model.jar;D:/soft/IDEA2020.1.2/lib/jna.jar;D:/soft/IDEA2020.1.2/lib/maven-model-3.6.1.jar;D:/soft/IDEA2020.1.2/lib/annotations.jar;D:/soft/IDEA2020.1.2/lib/maven-resolver-impl-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/netty-transport-4.1.47.Final.jar;D:/soft/IDEA2020.1.2/lib/maven-builder-support-3.6.1.jar;D:/soft/IDEA2020.1.2/lib/protobuf-java-3.5.1.jar;D:/soft/IDEA2020.1.2/lib/trove4j.jar;D:/soft/IDEA2020.1.2/lib/gson-2.8.6.jar;D:/soft/IDEA2020.1.2/lib/oro-2.0.8.jar;D:/soft/IDEA2020.1.2/lib/log4j.jar;D:/soft/IDEA2020.1.2/plugins/java/lib/jps-builders-6.jar;D:/soft/IDEA2020.1.2/lib/asm-all-7.0.1.jar;D:/soft/IDEA2020.1.2/lib/platform-api.jar;D:/soft/IDEA2020.1.2/lib/netty-common-4.1.47.Final.jar;D:/soft/IDEA2020.1.2/lib/forms-1.1-preview.jar;D:/soft/IDEA2020.1.2/lib/maven-resolver-spi-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/jna-platform.jar;D:/soft/IDEA2020.1.2/plugins/java/lib/maven-resolver-transport-http-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/slf4j-api-1.7.25
+
+## 查看6584进程支持的所有命令
+C:\Users\sedra>jcmd 6584 help
+6584:
+The following commands are available:
+JFR.stop
+JFR.start
+JFR.dump
+JFR.check
+VM.native_memory
+VM.check_commercial_features
+VM.unlock_commercial_features
+ManagementAgent.stop
+ManagementAgent.start_local
+ManagementAgent.start
+VM.classloader_stats
+GC.rotate_log
+Thread.print
+GC.class_stats
+GC.class_histogram
+GC.heap_dump
+GC.finalizer_info
+GC.heap_info
+GC.run_finalization
+GC.run
+VM.uptime
+VM.dynlibs
+VM.flags
+VM.system_properties
+VM.command_line
+VM.version
+help
+
+For more information about a specific command use 'help <command>'.
+
+## 显示6584进程的Thread.print命令的数据
+C:\Users\sedra>jcmd 6584 Thread.print
+6584:
+2021-09-18 23:59:17
+Full thread dump Java HotSpot(TM) 64-Bit Server VM (25.261-b12 mixed mode):
+
+"DestroyJavaVM" #14 prio=5 os_prio=0 tid=0x0000014d9ceca000 nid=0x2c98 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Thread-1" #13 prio=5 os_prio=0 tid=0x0000014db9ce0800 nid=0x34cc waiting for monitor entry [0x00000005517ff000]
+   java.lang.Thread.State: BLOCKED (on object monitor)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
+        - waiting to lock <0x000000076b778cb0> (a java.lang.StringBuilder)
+        - locked <0x000000076b778cf8> (a java.lang.StringBuilder)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
+        at java.lang.Thread.run(Thread.java:748)
+
+"Thread-0" #12 prio=5 os_prio=0 tid=0x0000014db9cdf800 nid=0x35e8 waiting for monitor entry [0x00000005516ff000]
+   java.lang.Thread.State: BLOCKED (on object monitor)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
+        - waiting to lock <0x000000076b778cf8> (a java.lang.StringBuilder)
+        - locked <0x000000076b778cb0> (a java.lang.StringBuilder)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
+        at java.lang.Thread.run(Thread.java:748)
+
+"Service Thread" #11 daemon prio=9 os_prio=0 tid=0x0000014db99d6800 nid=0x33b8 runnable [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C1 CompilerThread3" #10 daemon prio=9 os_prio=2 tid=0x0000014db9985000 nid=0x353c waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C2 CompilerThread2" #9 daemon prio=9 os_prio=2 tid=0x0000014db9978800 nid=0x1460 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C2 CompilerThread1" #8 daemon prio=9 os_prio=2 tid=0x0000014db9976800 nid=0x25ac waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"C2 CompilerThread0" #7 daemon prio=9 os_prio=2 tid=0x0000014db9972800 nid=0x3610 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Monitor Ctrl-Break" #6 daemon prio=5 os_prio=0 tid=0x0000014db9970800 nid=0xf6c runnable [0x0000000550ffe000]
+   java.lang.Thread.State: RUNNABLE
+        at java.net.SocketInputStream.socketRead0(Native Method)
+        at java.net.SocketInputStream.socketRead(SocketInputStream.java:116)
+        at java.net.SocketInputStream.read(SocketInputStream.java:171)
+        at java.net.SocketInputStream.read(SocketInputStream.java:141)
+        at sun.nio.cs.StreamDecoder.readBytes(StreamDecoder.java:284)
+        at sun.nio.cs.StreamDecoder.implRead(StreamDecoder.java:326)
+        at sun.nio.cs.StreamDecoder.read(StreamDecoder.java:178)
+        - locked <0x000000076b8d55a8> (a java.io.InputStreamReader)
+        at java.io.InputStreamReader.read(InputStreamReader.java:184)
+        at java.io.BufferedReader.fill(BufferedReader.java:161)
+        at java.io.BufferedReader.readLine(BufferedReader.java:324)
+        - locked <0x000000076b8d55a8> (a java.io.InputStreamReader)
+        at java.io.BufferedReader.readLine(BufferedReader.java:389)
+        at com.intellij.rt.execution.application.AppMainV2$1.run(AppMainV2.java:61)
+
+"Attach Listener" #5 daemon prio=5 os_prio=2 tid=0x0000014db8564800 nid=0x1a38 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Signal Dispatcher" #4 daemon prio=9 os_prio=2 tid=0x0000014db85be800 nid=0x1cec runnable [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"Finalizer" #3 daemon prio=8 os_prio=1 tid=0x0000014db8536800 nid=0x2da4 in Object.wait() [0x0000000550cfe000]
+   java.lang.Thread.State: WAITING (on object monitor)
+        at java.lang.Object.wait(Native Method)
+        - waiting on <0x000000076b608ee0> (a java.lang.ref.ReferenceQueue$Lock)
+        at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:144)
+        - locked <0x000000076b608ee0> (a java.lang.ref.ReferenceQueue$Lock)
+        at java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:165)
+        at java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:216)
+
+"Reference Handler" #2 daemon prio=10 os_prio=2 tid=0x0000014db852d000 nid=0x9dc in Object.wait() [0x0000000550bff000]
+   java.lang.Thread.State: WAITING (on object monitor)
+        at java.lang.Object.wait(Native Method)
+        - waiting on <0x000000076b606c00> (a java.lang.ref.Reference$Lock)
+        at java.lang.Object.wait(Object.java:502)
+        at java.lang.ref.Reference.tryHandlePending(Reference.java:191)
+        - locked <0x000000076b606c00> (a java.lang.ref.Reference$Lock)
+        at java.lang.ref.Reference$ReferenceHandler.run(Reference.java:153)
+
+"VM Thread" os_prio=2 tid=0x0000014db8502000 nid=0xae0 runnable
+
+"GC task thread#0 (ParallelGC)" os_prio=0 tid=0x0000014d9cee3000 nid=0x2b8c runnable
+
+"GC task thread#1 (ParallelGC)" os_prio=0 tid=0x0000014d9cee4800 nid=0x1294 runnable
+
+"GC task thread#2 (ParallelGC)" os_prio=0 tid=0x0000014d9cee6000 nid=0x3130 runnable
+
+"GC task thread#3 (ParallelGC)" os_prio=0 tid=0x0000014d9cee8000 nid=0x104c runnable
+
+"GC task thread#4 (ParallelGC)" os_prio=0 tid=0x0000014d9cee9000 nid=0x1d40 runnable
+
+"GC task thread#5 (ParallelGC)" os_prio=0 tid=0x0000014d9ceec000 nid=0x315c runnable
+
+"GC task thread#6 (ParallelGC)" os_prio=0 tid=0x0000014d9ceed000 nid=0x1998 runnable
+
+"GC task thread#7 (ParallelGC)" os_prio=0 tid=0x0000014d9ceee000 nid=0x258c runnable
+
+"VM Periodic Task Thread" os_prio=2 tid=0x0000014db9a3f800 nid=0x16fc waiting on condition
+
+JNI global references: 316
+
+
+Found one Java-level deadlock:
+=============================
+"Thread-1":
+  waiting to lock monitor 0x0000014db8533698 (object 0x000000076b778cb0, a java.lang.StringBuilder),
+  which is held by "Thread-0"
+"Thread-0":
+  waiting to lock monitor 0x0000014db8536138 (object 0x000000076b778cf8, a java.lang.StringBuilder),
+  which is held by "Thread-1"
+
+Java stack information for the threads listed above:
+===================================================
+"Thread-1":
+        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
+        - waiting to lock <0x000000076b778cb0> (a java.lang.StringBuilder)
+        - locked <0x000000076b778cf8> (a java.lang.StringBuilder)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
+        at java.lang.Thread.run(Thread.java:748)
+"Thread-0":
+        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
+        - waiting to lock <0x000000076b778cf8> (a java.lang.StringBuilder)
+        - locked <0x000000076b778cb0> (a java.lang.StringBuilder)
+        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
+        at java.lang.Thread.run(Thread.java:748)
+
+Found 1 deadlock.
+```
+
+
+
+#### 4.1.7  jstatd：远程主机信息收集
+
+​	之前的指令只涉及到监控本机的Java应用程序，而在这些工具中，一些监控工具也支持对远程计算机的监控（如 jps，jstat）。为了启用远程监控，则需要配合使用jstatd工具。命令jstatd是一个RMI服务端程序，它的作用相当于代理服务器，建立本地计算机与远程监控工具的通信。jstatd服务器将本机的Java应用程序信息传递到远程计算机。
+
+![jstatd](../JVM/image/jstatd.png)
