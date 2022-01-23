@@ -1,4 +1,4 @@
-- [JVM 知识](#jvm-%E7%9F%A5%E8%AF%86)
+- [JVM 知识](#Java_Jvm-%E7%9F%A5%E8%AF%86)
   - [1. 内存结构](#1-%E5%86%85%E5%AD%98%E7%BB%93%E6%9E%84)
     - [1.1 内存结构概览](#11-%E5%86%85%E5%AD%98%E7%BB%93%E6%9E%84%E6%A6%82%E8%A7%88)
     - [1.2 类加载子系统](#12-%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%AD%90%E7%B3%BB%E7%BB%9F)
@@ -9,7 +9,7 @@
     - [1.3 运行时数据区](#13-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA)
       - [1.3.1  **程序计数器（PC寄存器 Program Counter Register）**](#131--%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8pc%E5%AF%84%E5%AD%98%E5%99%A8-program-counter-register)
       - [1.3.2  **虚拟机栈**(JVM Stacks)](#132--%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88jvm-stacks)
-        - [**1.3.2.1 JVM的架构模型**](#1321-jvm%E7%9A%84%E6%9E%B6%E6%9E%84%E6%A8%A1%E5%9E%8B)
+        - [**1.3.2.1 JVM的架构模型**](#1321-Java_Jvm%E7%9A%84%E6%9E%B6%E6%9E%84%E6%A8%A1%E5%9E%8B)
         - [**1.3.2.2 栈帧的内部结构 **](#1322-%E6%A0%88%E5%B8%A7%E7%9A%84%E5%86%85%E9%83%A8%E7%BB%93%E6%9E%84-)
         - [**1.3.2.3 局部变量表**](#1323-%E5%B1%80%E9%83%A8%E5%8F%98%E9%87%8F%E8%A1%A8)
         - [**1.3.2.4 操作数栈 （数组实现）**](#1324-%E6%93%8D%E4%BD%9C%E6%95%B0%E6%A0%88-%E6%95%B0%E7%BB%84%E5%AE%9E%E7%8E%B0)
@@ -93,7 +93,7 @@
   - [4. 性能监控与调优](#4-%E6%80%A7%E8%83%BD%E7%9B%91%E6%8E%A7%E4%B8%8E%E8%B0%83%E4%BC%98)
     - [4.1 监控及诊断工具-命令行](#41-%E7%9B%91%E6%8E%A7%E5%8F%8A%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7-%E5%91%BD%E4%BB%A4%E8%A1%8C)
       - [4.1.1  jps （Java Process Status）：查看正在运行的Java进程](#411--jps-java-process-status%E6%9F%A5%E7%9C%8B%E6%AD%A3%E5%9C%A8%E8%BF%90%E8%A1%8C%E7%9A%84java%E8%BF%9B%E7%A8%8B)
-      - [4.1.2  jstat （JVM Statistics Monitoring Tool）：查看JVM统计信息](#412--jstat-jvm-statistics-monitoring-tool%E6%9F%A5%E7%9C%8Bjvm%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF)
+      - [4.1.2  jstat （JVM Statistics Monitoring Tool）：查看JVM统计信息](#412--jstat-Java_Jvm-statistics-monitoring-tool%E6%9F%A5%E7%9C%8Bjvm%E7%BB%9F%E8%AE%A1%E4%BF%A1%E6%81%AF)
       - [4.1.3  jinfo（Configuration Info for Java）：实时查看和修改JVM配置参数、](#413--jinfoconfiguration-info-for-java%E5%AE%9E%E6%97%B6%E6%9F%A5%E7%9C%8B%E5%92%8C%E4%BF%AE%E6%94%B9jvm%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0)
       - [4.1.4  jmap（JVM Memory Map）：导出内存映像文件和内存使用情况](#414--jmapjvm-memory-map%E5%AF%BC%E5%87%BA%E5%86%85%E5%AD%98%E6%98%A0%E5%83%8F%E6%96%87%E4%BB%B6%E5%92%8C%E5%86%85%E5%AD%98%E4%BD%BF%E7%94%A8%E6%83%85%E5%86%B5)
       - [4.1.5  jstack（JVM Stack Trace）：打印JVM中线程快照](#415--jstackjvm-stack-trace%E6%89%93%E5%8D%B0jvm%E4%B8%AD%E7%BA%BF%E7%A8%8B%E5%BF%AB%E7%85%A7)
@@ -106,17 +106,16 @@
 
 ### 1.1 内存结构概览
 
-![内存结构简图](../jvm/image/内存结构简图.png)
+![内存结构简图](../Java_Jvm/image/内存结构简图.png)
 
   <center style="font-size:18px;color:#1E90FF">图1.内存结构简图</center> 
 
-![内存结详细图](../jvm/image/内存结构详细图.png)
-
+![内存结详细图](../Java_Jvm/image/内存结构详细图.png)
   <center style="font-size:18px;color:#1E90FF">图2.内存结构详细图</center> 
 
 ### 1.2 类加载子系统
 
-![类加载子系统](../jvm/image/类加载子系统.png)
+![类加载子系统](../Java_Jvm/image/类加载子系统.png)
 
   <center style="font-size:18px;color:#1E90FF">图3.类加载子系统</center>
 
@@ -197,7 +196,7 @@
 1. 引导类（启动类）加载器(Bootstrap ClassLoader) （Native代码C++语言实现的）
 2. 其他加载器(所有派生于抽象类ClassLoader的类加载器)（Java 实现的）
 
-![ClassLoader类图](../jvm/image/ClassLoader类图.png)
+![ClassLoader类图](../Java_Jvm/image/ClassLoader类图.png)
 
   <center style="font-size:18px;color:#1E90FF">图4.ClassLoader类图</center>
 
@@ -208,7 +207,7 @@
 3. 系统类加载器SystemClassLoader（AppClassLoader）
 4. 自定义加载器
 
-![类加载器](../jvm/image/类加载器.png)
+![类加载器](../Java_Jvm/image/类加载器.png)
 
 <center style="font-size:18px;color:#1E90FF">图5.类加载器</center>
 
@@ -322,7 +321,7 @@ Java虚拟机对class文件采用的是**按需加载**的方式，也就是说�
 
 3. 如果父类加载器可以完成类加载任务，就成功返回，倘若父类加载器无法完成此加载任务，子类加载器才会尝试自己去加载，这就是双亲委派模式。
 
-   ![双亲委派](../jvm/image/双亲委派.png)
+   ![双亲委派](../Java_Jvm/image/双亲委派.png)
    
    <center style="font-size:18px;color:#1E90FF">图6.双亲委派</center>
 
@@ -463,13 +462,13 @@ java程序对类的使用分为：主动使用（会初始化）和被动使用�
 - 除了以上7中，其他使用Java类的方法都是被看作是对类的被动使用，**都不会导致类的初始化**
 
 ### 1.3 运行时数据区
-![数据加载图](../jvm/image/数据加载图.png)
+![数据加载图](../Java_Jvm/image/数据加载图.png)
 
 <center style="font-size:18px;color:#1E90FF">图7.数据加载图</center>
 
 ​	网络或者硬盘上的数据要被CPU计算，首先需要先加载到内存然后再经过CPU加载计算，内存是非常重要的系统资源，是CPU和硬盘的中间仓库及桥梁，承载着操作系统和应用程序的试试以运行。JVM内存布局规定了Java在运行过程中内存申请、分配、管理的策略，保证了JVM的高效率稳定运行。**不同的jvm对于内存的划分方式和管理机制存在着部分差异。**
 
-![数据加载图](../jvm/image/JDK8运行时数据区结构.png)
+![数据加载图](../Java_Jvm/image/JDK8运行时数据区结构.png)
 
 <center style="font-size:18px;color:#1E90FF">图8.JDK8运行时数据区结构</center>
 
@@ -481,7 +480,7 @@ java程序对类的使用分为：主动使用（会初始化）和被动使用�
 - **线程间共享**： 堆、堆外内存（永久代或者元空间，代码缓存区）
 
 
-![数据加载图](../jvm/image/运行时数据区划分.png)
+![数据加载图](../Java_Jvm/image/运行时数据区划分.png)
 
 <center style="font-size:18px;color:#1E90FF">图9.运行时数据区划分</center>
 
@@ -493,7 +492,7 @@ JVM中的程序计数寄存器（Program Counter Register）中，Register的命
 
 **作用： PC寄存器用来存储指向下一条指令的地址，也即将要执行的指令代码。由执行引擎读取下一条指令。**
 
-![PC寄存器](../jvm/image/PC寄存器.png)
+![PC寄存器](../Java_Jvm/image/PC寄存器.png)
 
 <center style="font-size:18px;color:#1E90FF">图10.PC寄存器</center>
 
@@ -504,7 +503,7 @@ JVM中的程序计数寄存器（Program Counter Register）中，Register的命
 5. 字节码解释器工作时就是通过改变这个计数器的值来选取下一条需要执行的字节码指令。
 6. **它是唯一一个在Java虚拟机规范中没有规定任何OutOfMemeryError情况的区域。**
 
-<img src="../jvm/image/PC寄存器示例图.png" alt="PC寄存器示例图" style="zoom:75%;" />
+<img src="../Java_Jvm/image/PC寄存器示例图.png" alt="PC寄存器示例图" style="zoom:75%;" />
 
 <center style="font-size:18px;color:#1E90FF">图11.PC寄存器示例图</center>
 
@@ -520,13 +519,13 @@ JVM中的程序计数寄存器（Program Counter Register）中，Register的命
 
 #### 1.3.2  **虚拟机栈**(JVM Stacks)
 
-![跨平台性](../jvm/image/跨平台性.png)
+![跨平台性](../Java_Jvm/image/跨平台性.png)
 
 <center style="font-size:18px;color:#1E90FF">图12.跨平台性</center>
 
 Java具有跨平台性的。一次编译，多次执行。虽然各个平台的Java虚拟机内部实现细节不尽相同，但是他们共同执行的字节码内容却是一样的。
 
-![代码执行流程](../jvm/image/代码执行流程.png)
+![代码执行流程](../Java_Jvm/image/代码执行流程.png)
 
 <center style="font-size:18px;color:#1E90FF">图13.代码执行流程</center>
 
@@ -536,7 +535,7 @@ Java 虚拟机使用类加载器（Class Loader）加载class文件。类加载�
 
 操作系统并不识别字节码指令，只能够识别机器指令，JVM的主要任务就是负责将字节码装载到其内部，解释/编译为对应平台的机器指令（即：汇编语言）执行
 
-![语言](../jvm/image/语言.png)
+![语言](../Java_Jvm/image/语言.png)
 
 <center style="font-size:18px;color:#1E90FF">图14.语言翻译</center>
 
@@ -611,7 +610,7 @@ JVM直接对栈的操作只有两个，就是对栈帧的**压栈**和**出栈**
 
 执行引擎运行的所有字节码指令只针对当前栈帧进行操作。如果在该方法中调用了其他方法，对应的新栈帧会被创建出来，放在栈的顶端，成为新的当前桢。
 
-![方法与栈帧](../jvm/image/方法与栈帧.png)
+![方法与栈帧](../Java_Jvm/image/方法与栈帧.png)
 
 <center style="font-size:18px;color:#1E90FF">图15.方法与栈帧</center>
 
@@ -631,7 +630,7 @@ JVM直接对栈的操作只有两个，就是对栈帧的**压栈**和**出栈**
 
 （动态链接、方法返回地址、附加信息又称为桢数据区）
 
-![栈帧内部结构](../jvm/image/栈帧内部结构.png)
+![栈帧内部结构](../Java_Jvm/image/栈帧内部结构.png)
 
 <center style="font-size:18px;color:#1E90FF">图16.栈帧内部结构</center>
 
@@ -654,7 +653,7 @@ JVM直接对栈的操作只有两个，就是对栈帧的**压栈**和**出栈**
   - long和double则占据两个slot
   
 
-![slot](../jvm/image/关于slot.png)
+![slot](../Java_Jvm/image/关于slot.png)
 
 <center style="font-size:18px;color:#1E90FF">图17.slot理解</center>
 
@@ -708,7 +707,7 @@ JVM直接对栈的操作只有两个，就是对栈帧的**压栈**和**出栈**
 - 操作数栈，在方法执行过程中，根据字节码指令，往栈中写入数据或提取数据，即入栈/出栈。（默写字节码指令将值压入操作数栈，其余的字节码指令将操作数取出栈。使用它们后（如执行复制，交换，求和等操作）再把结果压入栈。
 
 
-![操作数](../jvm/image/操作数.png)
+![操作数](../Java_Jvm/image/操作数.png)
 
 <center style="font-size:18px;color:#1E90FF">图18.操作数</center>
 
@@ -737,7 +736,7 @@ public class OperandStackTest {
 }
 ```
 
-![操作数栈追踪](../jvm/image/操作数栈追踪.png)
+![操作数栈追踪](../Java_Jvm/image/操作数栈追踪.png)
 
 <center style="font-size:18px;color:#1E90FF">图19.操作数栈追踪</center>
 
@@ -769,7 +768,7 @@ public class OperandStackTest {
 - 在Java源码文件被编译到字节码文件中时，所有的变量和方法引用都作为符号引用（Symbolic Reference）保存在class文件的常量池中。比如：描述一个方法调用了另外的其他方法时，就是通过常量池中指向方法的符号引用来表示的，**那么动态链接的作用就是为了将这些符号引用转换为调用方法的直接引用。**
 - 常量池的作用就是为了以提供一些符号和常量，便于指令的识别。
 
-![动态链接](../jvm/image/动态链接.png)
+![动态链接](../Java_Jvm/image/动态链接.png)
 
 <center style="font-size:18px;color:#1E90FF">图20.动态链接</center>
 
@@ -924,7 +923,7 @@ IllegalAccessError介绍：
 - Java虚拟机规范中堆Java堆的描述是：**所有的对象实例以及数组都应当在运行时分配在堆上**。（应该是几乎所有，因为还有栈上分配的情况）
 - **数组和对象可能永远不会存储在栈上**，因为栈帧中保存引用，这个引用指向对象或者数组在堆中的位置。
 
-![对象存储关系](../jvm/image/对象存储关系.png)
+![对象存储关系](../Java_Jvm/image/对象存储关系.png)
 
 <center style="font-size:18px;color:#1E90FF">图21.动态链接</center>
 
@@ -937,7 +936,7 @@ IllegalAccessError介绍：
 
 现代垃圾收集器大部分都基于分带收集理论设计，堆空间细分为：
 
-![堆](../jvm/image/堆.png)
+![堆](../Java_Jvm/image/堆.png)
 
 <center style="font-size:18px;color:#1E90FF">图22.堆</center>
 
@@ -954,7 +953,7 @@ IllegalAccessError介绍：
 
 约定： 新生区 --> 新生代 --> 年轻代， 养老区 --> 老年区 --> 老年代，  永久区 --> 永久代
 
-![堆参数作用区域](../jvm/image/堆参数作用区域.png)
+![堆参数作用区域](../Java_Jvm/image/堆参数作用区域.png)
 
 <center style="font-size:18px;color:#1E90FF">图23.堆参数作用区域</center>
 
@@ -983,7 +982,7 @@ IllegalAccessError介绍：
 
 - 其中年轻代又可以划分为Eden空间，Survior0空间和Survivor1空间（有时也叫做from区、to区）
 
-![堆空间划分](../jvm/image/堆空间划分.png)
+![堆空间划分](../Java_Jvm/image/堆空间划分.png)
 
 <center style="font-size:18px;color:#1E90FF">图24.堆空间划分</center>
 
@@ -999,13 +998,13 @@ IllegalAccessError介绍：
   - 可以使用选项 “**-Xmn**” 设置新生代最大内存大小
     - 这个参数一般使用默认值就可以了
 
-![堆空间分代比例](../jvm/image/堆空间分代比例.png)
+![堆空间分代比例](../Java_Jvm/image/堆空间分代比例.png)
 
 <center style="font-size:18px;color:#1E90FF">图25.堆空间分代比例</center>
 
 ##### **1.3.4.4 对象分配过程**
 
-![对象分配过程](../jvm/image/对象分配过程.png)
+![对象分配过程](../Java_Jvm/image/对象分配过程.png)
 
 <center style="font-size:18px;color:#1E90FF">图26.对象分配过程</center>
 
@@ -1016,7 +1015,7 @@ IllegalAccessError介绍：
 - **针对幸存者S0，S1区： 复制之后有交换，谁空谁是to区**
 - **关于垃圾回收：频繁在新生区收集，很少在养老区收集，几乎不在永久区/元空间收集**
 
-![对象分配特殊情况](../jvm/image/对象分配特殊情况.png)
+![对象分配特殊情况](../Java_Jvm/image/对象分配特殊情况.png)
 
 <center style="font-size:18px;color:#1E90FF">图26.对象分配特殊情况</center>
 
@@ -1109,7 +1108,7 @@ JVM在进行GC时，并非每次都对上面三个内存区域（新生代、老
 - 从内存模型而不是垃圾收集的角度，对Eden区域继续进行划分，**JVM为每个线程分配了一个私有缓存区域**，它包含在Eden空间内。
 
 - 多线程同时分配内存时，使用TLAB可以避免一系列的非线程安全问题，同时还能提升内存分配的吞吐量，因此我们可以将这种内存分配方式称之为快速分配策略
-  ![TLAB](../jvm/image/TLAB.png)
+  ![TLAB](../Java_Jvm/image/TLAB.png)
 
   <center style="font-size:18px;color:#1E90FF">图27.TLAB</center>
 
@@ -1121,7 +1120,7 @@ JVM在进行GC时，并非每次都对上面三个内存区域（新生代、老
 
 - 一旦对象在TLAB空间分配内存失败时，JVM就会尝试着通过**使用加锁机制**确保数据操作的原子性，从而直接在Eden空间中分配内存。
 
-  ![对象分配进阶](../jvm/image/对象分配进阶.png)
+  ![对象分配进阶](../Java_Jvm/image/对象分配进阶.png)
 
   <center style="font-size:18px;color:#1E90FF">图28.对象分配进阶</center>
 
@@ -1251,15 +1250,15 @@ public class Demo {
 
 ##### **1.3.5.1 运行时数据区划分**
 
-![运行时数据区结构图](../jvm/image/运行时数据区结构图.png)
+![运行时数据区结构图](../Java_Jvm/image/运行时数据区结构图.png)
 
   <center style="font-size:18px;color:#1E90FF">图29.运行时数据区结构图</center>
 
-  ![数据共享角度运行时数据区划分](../jvm/image/数据共享角度运行时数据区划分.png)
+  ![数据共享角度运行时数据区划分](../Java_Jvm/image/数据共享角度运行时数据区划分.png)
 
   <center style="font-size:18px;color:#1E90FF">图30.数据共享角度运行时数据区划分</center>
 
-  ![栈堆方法区的交互关系](../jvm/image/栈堆方法区的交互关系.png)
+  ![栈堆方法区的交互关系](../Java_Jvm/image/栈堆方法区的交互关系.png)
 
   <center style="font-size:18px;color:#1E90FF">图31.栈堆方法区的交互关系</center>
 
@@ -1281,7 +1280,7 @@ Java虚拟机规范中明确说明：“尽管所有的方法区在逻辑上是�
 - 本质上，方法区和永久代并不等价。仅是对Hotspot虚拟机而言的。Java虚拟机规范对如何实现方法区，不做统一要求。例如BEA JRockit/IBM J9中不存在永久代的概念
   - 现在来看，当年使用永久代，不是好的idea。（使用永久代时，也就是jdk1.7及之前用的都是JVM的内存，而JDK1.8之后元空间使用的是本地内存）导致Java程序更容易OOM（超过-XX:MaxPermSize上限）
 
-  ![方法区](../jvm/image/方法区.png)
+  ![方法区](../Java_Jvm/image/方法区.png)
 
   <center style="font-size:18px;color:#1E90FF">图32.方法区</center>
 
@@ -1482,13 +1481,13 @@ Java虚拟机规范中明确说明：“尽管所有的方法区在逻辑上是�
 ##### **1.3.5.5 方法区的演进（Hotspot虚拟机）**
 
 JDK1.6 及以前，有永久代（permanent generation），静态变量存放在永久代上。
-![JDK6方法区](../jvm/image/JDK6方法区.png)
+![JDK6方法区](../Java_Jvm/image/JDK6方法区.png)
 
 JDK1.7 ，有永久代，但已经逐步“去永久代”，字符串常量池，静态变量移除，保存在堆中。
-![JDK7方法区](../jvm/image/JDK7方法区.png)
+![JDK7方法区](../Java_Jvm/image/JDK7方法区.png)
 
 JDK1.8及以后，无永久代，类型信息、字段、方法、常量保存在本地内存的元空间，**但是字符串常量池、静态变量仍在堆。**
-![JDK8方法区](../jvm/image/JDK8方法区.png)
+![JDK8方法区](../Java_Jvm/image/JDK8方法区.png)
 
 随着Java8的到来，Hotspot VM中再也见不到永久代了。但是这并不意味着类的元数据信息也小时了。这些数据被移到一个与堆不相连的本地内存区域，这个区域叫做元空间（Metaspace）。由于类的元数据分配在本地内存中，元空间的最大可分配空间就是系统可用内存空间。
 
@@ -1631,7 +1630,7 @@ Java虚拟机被允许对满足以上三个条件的无用类进行回收，但�
 
   1. 如果内存规整的，那么虚拟机将采用指针碰撞法（Bump The Pointer）来为对象分配内存。意思是所有用过的内存在一百年，空闲的内存在另一边，中间存放一个指针作为分解点的指示器，分配内存就仅仅是把指针向空闲那边挪动一段与对象大小相等的距离罢了。如果垃圾收集器选择的是Serial、Parnew这种基于压缩算法的，虚拟机采用这种分配方式。一般使用带有compact（整理）过程的收集器时，使用指针碰撞。
 
-  ![指针碰撞](../jvm/image/指针碰撞.png)
+  ![指针碰撞](../Java_Jvm/image/指针碰撞.png)
 
 
   2. 如果内存不规整的，已使用的内存和未使用的内存相互交错，那么虚拟机将采用空闲列表来为对象分配内存。意思是虚拟机维护一个列表，记录那些内存块是可用的，再分配的时候从列表中找到一块足够的的空间划分给对象实例，并更新列表上的内容。这种分配方式称为“空闲列表（Free List）”
@@ -1706,7 +1705,7 @@ public class Demo {
 
 ```
 
-![对象内存布局](../jvm/image/对象内存布局.png)
+![对象内存布局](../Java_Jvm/image/对象内存布局.png)
 
 <center style="font-size:18px;color:#1E90FF">图33.对象内存布局图解</center>
 
@@ -1714,19 +1713,19 @@ public class Demo {
 
 创建对象的目的就是为了使用它，JVM是如何通过栈帧中的对象引用访问到其内部的对象实例的？
 
-![对象访问定位](../jvm/image/对象访问定位.png)
+![对象访问定位](../Java_Jvm/image/对象访问定位.png)
 
 <center style="font-size:18px;color:#1E90FF">图34.对象访问定位</center>
 
 **对象访问方式主要有两种**
 
 - **句柄访问**
-  ![句柄池访问](../jvm/image/句柄池访问.png)
+  ![句柄池访问](../Java_Jvm/image/句柄池访问.png)
   - 实现：栈的本地变量表记录了对象引用reference,在堆空间开辟了一块区域，这块区域叫句柄池，放了很多的句柄，一个对象对应一个句柄，句柄有两个信息，一个是到对象实例数据的指针指向了堆空间中new的对象数据，一个是到对象类型数据的指针指向了方法区中对象的类元数据。
   - 好处：reference中存储稳定句柄地址，对象被移动（垃圾收集时移动对象很普遍）时只会改变句柄中实例数据指针即可，reference本身不需要被修改
   - 缺点：首先需要专门消耗一部分的空间用来存放句柄，其次要访问一个对象，要先找到这个引用的句柄，再通过句柄对应的指针访问对象实例，效率较低。
 - **直接指针（Hotspot采用）**
-  ![直接指针](../jvm/image/直接指针.png)
+  ![直接指针](../Java_Jvm/image/直接指针.png)
   - 栈空间的对象指针直接指向了对象的实体，在对象实体当中有一个类型指针指向了方法区中对象的类元数据
   - 好处：直接通过对象引用就访问到对象，效率较高，也无需开辟新的空间。节省空间，速度快
   - 缺点：对象变动时，需要修改栈空间中的引用值
@@ -1744,10 +1743,10 @@ public class Demo {
 通常，访问直接内存的速度会优于Java堆。即读写性能高。
 
 读写文件，需要与磁盘交互，需要由用户态切换到内核态。在内核态时，需要内存如下图操作。使用IO，这里需要两份内存存储重复数据，效率低。
-![IO](../jvm/image/IO.png)
+![IO](../Java_Jvm/image/IO.png)
 
 使用NIO时，操作系统划出的直接缓存区可以被java代码直接访问，只有一份。NIO适合对大文件的读写操作。
-![NIO](../jvm/image/NIO.png)
+![NIO](../Java_Jvm/image/NIO.png)
 
 因此出于性能考虑，独写频繁的场合可能会考虑使用直接内存。Java的NIO库允许Java程序使用直接内存，用于数据缓冲区。
 
@@ -1791,7 +1790,7 @@ public class Demo {
 执行引擎是Java虚拟机核心的组成部分之一。“虚拟机”是一个相对于“物理机”的概念，这两种机器都有代码执行能力，其区别是物理机的执行引擎是直接建立在处理器、缓存、指令集和操作系统层面上的，**而虚拟机的执行引擎则是由软件自行实现的**，因此可以不受物理条件制约地定制指令集与执行引擎的结构体系，**能够执行那些不被硬件直接支持的指令集格式。**
 
 JVM的主要任务是负责装载字节码到其内部，但字节码并不能够直接运行在操作系统之上 ，因为字节码指令并非等价于本地机器指令，它内部包含的仅仅只是一些能够被JVM所识别的字节码指令、符号表以及其他辅组信息。那么，如果要让一个Java程序运行起来，执行引擎的任务就是将字节码指令解释/编译为对应平台上的本地机器指令才可以。简单来说，JVM中的执行引擎充当了将高级语言翻译为机器语言的译者。
-![执行引擎工作过程](../jvm/image/执行引擎工作过程.png)
+![执行引擎工作过程](../Java_Jvm/image/执行引擎工作过程.png)
 
 1） 执行引擎在执行的过程中究竟需要执行什么样的字节码指令完全依赖于PC寄存器
 
@@ -1800,15 +1799,15 @@ JVM的主要任务是负责装载字节码到其内部，但字节码并不能�
 3） 当然方法在执行的过程中，执行引擎有可能会通过存储在局部变量表中的对象引用准确定位到存储在Java堆区中国的对象实例信息，以及通过对对象头中的元数据指针定位到目标对象的类型信息
 
 从外观上来看，所有的Java虚拟机的执行引擎输入、输出都是一致的：输入的是字节码二进制流，处理过程是字节码解析执行的等效过程，输出的是执行结果。
-![java代码编译执行](../jvm/image/java代码编译执行.png)
+![java代码编译执行](../Java_Jvm/image/java代码编译执行.png)
 
 大部分的程序代码转换成物理机的目标代码或虚拟机能执行的指令集之前，都需要经过上图的各个步骤。
 
 Java代码编译是由Java源码编译器来完成的，流程图如下：
-![java编译](../jvm/image/java编译.png)
+![java编译](../Java_Jvm/image/java编译.png)
 
 Java字节码的执行是由JVM执行引擎来完成，流程图如下：
-![解释器](../jvm/image/解释器.png)
+![解释器](../Java_Jvm/image/解释器.png)
 
 **什么是解释器（Interpret）,什么是JIT编译器？**
 
@@ -2106,7 +2105,7 @@ public class Demo {
 1. 需要单独的字段存储计数器，增加了存储空间的开销。
 2. 每次赋值都需要更新计数器，伴随着加法和减法操作，增加了时间开销
 3. **无法处理循环引用的情况**，这是一条致命缺陷，导致在**Java的垃圾回收器中没有使用这类算法**。
-![循环引用](../jvm/image/循环引用.png)
+![循环引用](../Java_Jvm/image/循环引用.png)
 
 <center style="font-size:18px;color:#1E90FF">图35.循环引用</center>
 
@@ -2141,7 +2140,7 @@ Python 是通过手动解除（就是在合适的时机，解除引用关系）�
 **技巧**：
 
 由于Root采用栈方式存放变量和指针，所以如果一个指针，它保存了堆内存里的对象，但是自己又不存放在堆内存里面，那它就是一个Root。
-![GCRoots](../jvm/image/GCRoots.png)
+![GCRoots](../Java_Jvm/image/GCRoots.png)
 
 除了这些固定的GC Roots集合之外，根据用户所选用的垃圾收集器以及当前回收的内存区域不同，还可以有其他对象”临时性“地加入，共同构成完整GC Roots集合。比如分代收集和局部回收（Partial GC）,如果只针对Java堆中的某一块区域进行垃圾回收如针对新生代，必须考虑到内存区域是虚拟机自己的实现细节，更不是孤立封闭的，这个区域的对象完全有可能被其他区域（如老年代）的对象所引用，这时候就需要一并讲关联的区域对象也加入GC Roots集合中去考虑，才能够保可达性分析的准确性。
 
@@ -2150,7 +2149,7 @@ Python 是通过手动解除（就是在合适的时机，解除引用关系）�
 **基本思路：**
 
 - 可达性分析算法是以根对象集合（GC Roots)为起点，按照**从上至下的方式搜索被根对象集合所连接的目标对象是否可达**。
-![可达性分析](../jvm/image/可达性分析.png)
+![可达性分析](../Java_Jvm/image/可达性分析.png)
 - 使用可达性分析算法后，内存中的存活对象都会被根对象集合直接或间接连接着，搜索所走过的路径称为**引用链（Reference Chain）**
 - 如果目标对象没有任何引用链相连，则是不可达的，就意味着该对象已经死亡，可以标记为垃圾对象。
 - 在可达性分析算法中，只有能够被根对象集合直接或间接连接的对象才是存活对象。
@@ -2208,7 +2207,7 @@ finalize() 方法允许在子类中被重写，**用于在对象被回收时进�
 - **标记**：Collector从引用根节点开始遍历，标记所有被引用的对象。一般是在对象的Header中记录为可达对象。
 - **清除**：Collector对堆内存从头到尾进行线性遍历，如果发现某个对象在其Header中没有标记为可达对象，则将其回收。
 
-![标记清除算法](../jvm/image/标记清除算法.png)
+![标记清除算法](../Java_Jvm/image/标记清除算法.png)
 
 **缺点：**
 
@@ -2224,7 +2223,7 @@ finalize() 方法允许在子类中被重写，**用于在对象被回收时进�
 
 将活着的内存空间分为两块，每次只使用其中一块，在垃圾回收时将正在使用的内存中的存活对象复制到未被使用的内存块中，之后清除正在使用的内存块中的所有对象，交换两个内存的角色，最后完成垃圾回收。
 
-![复制算法](../jvm/image/复制算法.png)
+![复制算法](../Java_Jvm/image/复制算法.png)
 
 **优点：**
 
@@ -2246,7 +2245,7 @@ finalize() 方法允许在子类中被重写，**用于在对象被回收时进�
 
 标记-清除算法的确可以应用在老年代中，但是该算法不仅执行效率地下，而且在执行完之内存回收之后还会产生内存碎片，所以JVM的设计者在此基础上进行改进，标记-压缩算法由此诞生。
 
-![标记压缩算法](../jvm/image/标记压缩算法.png)
+![标记压缩算法](../Java_Jvm/image/标记压缩算法.png)
 
 第一阶段和标记清除算法一样，从根节点开始标记所有被引用的对象。第二阶段将所有的存活对象压缩到内存的一端，按顺序排放。之后，清理边界外所有的空间。
 
@@ -2362,7 +2361,7 @@ javadoc中对OutOfMemoryError的解释是，没有空闲内存，并且垃圾收
 也称之为“存储渗漏”。**严格来讲，只有对象不会再被程序用到了，但是GC又不能回收他们的情况，才叫内存泄漏。**
 但是实际情况很多时候一些不太好的实践（或者疏忽）会导致对象的声明周期变得很长甚至导致OOM，也可以叫做**宽泛意义上的”内存泄漏”**。尽管内存泄漏并不会立刻引起程序崩溃，但是一旦发生内存泄漏，程序中的可用内存就会被逐步蚕食，甚至耗尽所有内存，最终出现OutOfMemory异常，导致程序崩溃。有个需要注意的点，这里的存储空间并不是指物理内存，而是指虚拟机内存大小，这个虚拟机内存大小取决于磁盘交换区设定的大小。
 
-![内存泄漏](../jvm/image/内存泄漏.png)
+![内存泄漏](../Java_Jvm/image/内存泄漏.png)
 
 **举例：**
 
@@ -2403,7 +2402,7 @@ STW是JVM在**后台自动发起和自动完成**的。在用户不可见的请�
   - 在操作系统中，是指**一个时间段**中有几个程序都处于已启动运行到运行完毕之间，且这几个程序都是在同样一个处理器上个运行。
   - 并发不是真正意义上的“同时执行”，只是CPU把一个时间段划分成几个时间片段（时间区间），然后在这几个时间区间之间来回切换，由于CPU处理的速度非常快，只要时间间隔处理得当，即可让用户感觉是多个应用程序同时在运行。
 
-  ![并发](../jvm/image/并发.png)
+  ![并发](../Java_Jvm/image/并发.png)
 
 
 - **并行（Parallel）**
@@ -2412,7 +2411,7 @@ STW是JVM在**后台自动发起和自动完成**的。在用户不可见的请�
   - 其实决定并行的因素不是CPU的数量，而是CPU的核心数量，比如一个CPU多个核也可以并行。
   - 适合科学计算，后台处理等弱交互场景。
 
-  ![并行](../jvm/image/并行.png)
+  ![并行](../Java_Jvm/image/并行.png)
 
 并发，指的是多个事情，在**同一个时间段内同时发生了。**
 
@@ -2436,7 +2435,7 @@ STW是JVM在**后台自动发起和自动完成**的。在用户不可见的请�
   - 用户程序在继续运行，而垃圾收集程序运行于另一个CPU上；如CMS、G1
   
 
-![GC中的并行于并发](../jvm/image/GC中的并行于并发.png)
+![GC中的并行于并发](../Java_Jvm/image/GC中的并行于并发.png)
 
 #### 2.4.7 安全点与安全区域（了解）
 
@@ -2471,7 +2470,7 @@ STW是JVM在**后台自动发起和自动完成**的。在用户不可见的请�
 
 除强引用之外，其他3种引用均可以在java.lang.ref包中找到。如下图，显示了这三种引用类型对应的类，开发人员可以在应用程序中直接使用它们。
 
-![引用](../jvm/image/引用.png)
+![引用](../Java_Jvm/image/引用.png)
 
 - **强引用（不回收）**：
 
@@ -2522,7 +2521,7 @@ STW是JVM在**后台自动发起和自动完成**的。在用户不可见的请�
 垃圾收集器没有在规范中进行过多的规定，可以由不同的厂商、不同版本的JVM来实现。由于JDK的版本处于高速迭代过程中，因此Java发展至今已经衍生了众多的GC版本。从不同角度分析垃圾收集器，可以将GC分为不同的类型。
 
 - **按线程数分，可以分为串行垃圾回收器和并行垃圾回收器**
-  ![垃圾回收串行与并行](../jvm/image/垃圾回收串行与并行.png)
+  ![垃圾回收串行与并行](../Java_Jvm/image/垃圾回收串行与并行.png)
   
   - 串行回收指的是在同一时间段内只允许有一个CPU用于执行垃圾回收操作，此时工作线程被暂停，直至垃圾收集工作结束。
     - 在诸如单CPU处理器或者较小的应用内存等硬件平台不是特别优越的场合，串行回收器的性能表现可以超过并行回收器和并发回收器。**所以串行回收默认被应用在客户端的Client模式下的JVM中。**
@@ -2536,7 +2535,7 @@ STW是JVM在**后台自动发起和自动完成**的。在用户不可见的请�
 
     - 并发式垃圾回收器与应用程序线程交替工作，以尽可能减少应用程序的停顿时间。
     - 独占式垃圾回收器一旦运行，就停止了应用程序中所有的用户线程，直到垃圾回收过程完全结束。
-        ![独占式与并发式](../jvm/image/独占式与并发式.png)
+        ![独占式与并发式](../Java_Jvm/image/独占式与并发式.png)
 - **按碎片处理方式分，可以分为压缩式和非压缩式垃圾回收器**
   - 压缩式垃圾回收器会在回收完成后，对存活对象进行压缩整理，消除回收后的碎片。再分配对象空间使用指针碰撞。
   - 非压缩式的垃圾回收器不进行碎片整理。再分配对象空间使用空闲列表。
@@ -2554,12 +2553,12 @@ STW是JVM在**后台自动发起和自动完成**的。在用户不可见的请�
   ​	比如虚拟机总共运行了100分钟，其中垃圾收集花掉1分钟，那吞吐量就是99%
 
   吞吐量优先的情况下，应用程序能容忍较高的暂停时间，因此高吞吐量的应用程序有更长的时间基准，快速响应是不必考虑的。意味着在单位时间内，STW的时间最短。
-  ![吞吐量](../jvm/image/吞吐量.png)
+  ![吞吐量](../Java_Jvm/image/吞吐量.png)
   
 - **暂停时间：**执行垃圾收集时，程序的工作线程被暂停的时间
 
   ”暂停时间“是指一个时间段内应用程序线程暂停，让GC线程执行的状态，例如GGC期间100ms的暂停时间意味着这100ms期间内没有应用程序线程是活跃的。
-  ![低延迟](../jvm/image/低延迟.png)
+  ![低延迟](../Java_Jvm/image/低延迟.png)
 
 
   暂停时间优先，意味着尽可能让单次STW的时间最短。
@@ -2597,12 +2596,12 @@ STW是JVM在**后台自动发起和自动完成**的。在用户不可见的请�
 
 **并发回收器：**G1、CMS
 
-![垃圾收集器与分代关系](../jvm/image/垃圾收集器与分代关系.png)
+![垃圾收集器与分代关系](../Java_Jvm/image/垃圾收集器与分代关系.png)
 
 
 **垃圾回收器组合关系**
 
-![垃圾回收器组合关系](../jvm/image/垃圾回收器组合关系.png)
+![垃圾回收器组合关系](../Java_Jvm/image/垃圾回收器组合关系.png)
 
 1. 两个收集器间有连线，表示它们可以搭配使用
 2. 其中Serial Old 作为CMS出现“Concurrent Mode Failure”失败的后备方案
@@ -2610,7 +2609,7 @@ STW是JVM在**后台自动发起和自动完成**的。在用户不可见的请�
 4. （绿色虚线）JDK14中，弃用Parallel Scavenge和Serial Old组合（JEP366）
 5. （青色虚线）JDK14中，删除CMS垃圾回收器（JEP363）
 
-![JDK14垃圾回收器组合关系](../jvm/image/JDK14垃圾回收器组合关系.png)
+![JDK14垃圾回收器组合关系](../Java_Jvm/image/JDK14垃圾回收器组合关系.png)
 
 为什么需要有很多收集器，因为Java的使用场景很多，移动端、服务器等。所以就需要针对不同场景，提供不同的垃圾收集器，提高垃圾收集的性能。没有一种放之四海皆准、任何场景下都是用的完美收集器存在，更加没有万能的收集器。**我们选择的只是对具体应用最合适的收集器**。
 
@@ -2637,7 +2636,7 @@ Serial Old是运行在Client模式下默认的老年代垃圾收集器。
 
 Serial Old在Server模式下主要有两个用途：①与新生代的Parallel Scavenge配合使用。②作为老年代CMS收集器的后备垃圾收集方案
 
-![Serial、SerialOld收集器](../jvm/image/Serial、SerialOld收集器.png)
+![Serial、SerialOld收集器](../Java_Jvm/image/Serial、SerialOld收集器.png)
 
 这个收集器是一个单线程的收集器，但它的“单线程”的意义并不仅仅说明**它只会使用一个CPU或者一条收集线程去完成垃圾收集工作**，更重要的是在它进行垃圾收集时，**必须暂停其他所有的工作线程**，直到它收集结束（Stop The World）。
 
@@ -2663,7 +2662,7 @@ ParNew收集器除了**采用并行回收**的方式执行内存回收外，两�
 
 ParNew是很多JVM运行在Server模式下新生代的默认垃圾收集。
 
-![ParNew、SerialOld收集器](../jvm/image/ParNew、SerialOld收集器.png)
+![ParNew、SerialOld收集器](../Java_Jvm/image/ParNew、SerialOld收集器.png)
 
 对于新生代，回收次数频繁，使用并行方式效率高效。
 
@@ -2691,7 +2690,7 @@ Parallel收集器在JDK6时提供了用于执行老年代垃圾收集的Parallel
 
 **Parallel Old**收集器**采用了标记-压缩算法**，但同样也是基于**并行回收**和**”Stop The World“机制**。
 
-![ParallelScavenge、ParallelOld收集器](../jvm/image/ParallelScavenge、ParallelOld收集器.png)
+![ParallelScavenge、ParallelOld收集器](../Java_Jvm/image/ParallelScavenge、ParallelOld收集器.png)
 
 在吞吐量优先的应用场景中，Parallel 收集器和Parallel Old收集器的组合，在Server模式下的内存回收性能很不错。在JDK8中，默认是此垃圾收集器。
 
@@ -2721,7 +2720,7 @@ CMS的垃圾收集**采用标记-清除算法**，并且也会”Stop The World�
 
 CMS作为老年代的垃圾收集器，却无法与JDK1.4中已经存在的新生代收集器Parallel Scavenge配合工作,因为Parallel底层用的框架不一样。所以在JDK1.5中使用CMS来收集老年代的时候，新生代只能选择ParNew或者Serial收集器中一个。在G1出现之前，CMS使用还是非常广泛的。
 
-![CMS收集器](../jvm/image/CMS收集器.png)
+![CMS收集器](../Java_Jvm/image/CMS收集器.png)
 
 CMS整个过程比之前的收集器要复杂，整个过程分为4个主要阶段，即**初始标记阶段、并发标记阶段、重新标记阶段和并发清除阶段**。
 
@@ -2791,7 +2790,7 @@ G1是一款面向服务段应用的垃圾收集器，主要**针对配备多核C
 
 ##### **2.5.7.2 分区Region：化整为零 **
 
-![region](../jvm/image/region.png)
+![region](../Java_Jvm/image/region.png)
 
 使用G1收集器时，它将整个Java堆划分成约2048个大小相同的独立Region块，每个Region块大小根据堆空间的实际大小而定，整体被控制在 1m~32m之间，且为2的N次幂。可以通过-XX:G1HeapRegionSize设定。**所有的Region大小相同，且在JVM生命周期内不会被改变**。虽然还保留有新生代和老年代的概念，但是新生代和老年代不再是物理隔离的了，它们都是一部分Region（不需要连续）的集合。通过Region的动态分配方式实现逻辑上的连续。
 
@@ -2817,7 +2816,7 @@ Region里面内存空间采用指针碰撞，并且也有TLAB。就可以并行�
   - 从分代上看，**G1依然属于分代型垃圾收集器**，它会区分年轻代和老年代，年轻代依然有Eden区、Survivor区。但是从堆的结构上看，它不要求整个Eden区、年轻代或者老年代都是连续的，也不再坚持固定大小和固定数量。
   - **将堆空间分为若干个区域（Region），这些区域中包含了逻辑上的年轻代和老年代。**
   - 和之前的各类回收器不同，**它同时兼顾年轻代和老年代**。对比其他回收器，或者工作在年轻代，或者工作在老年代。
-  ![G1分代](../jvm/image/G1分代.png)
+  ![G1分代](../Java_Jvm/image/G1分代.png)
   
 - **空间整合**
 
@@ -2854,10 +2853,10 @@ G1的设计原则就是简化JVM性能调优，开发人员只需要简单的三
 **Remembered Set概念：** 
 
 一个Region不可能是孤立的，一个Region中的对象可能被其他任意Region中对象引用，如下图，判断对象存活时是否需要扫描整个Java才能保证准确? 回收新生代也不得不同时扫描老年代? 在其他的分代收集器，也有这样的问题，G1因为将区域分为一块块的region，这个问题更突出。如果这样的话，会降低Minor GC的效率。
-![region引用关系](../jvm/image/region引用关系.png)
+![region引用关系](../Java_Jvm/image/region引用关系.png)
 
 无论是G1还是其他分代收集器，**JVM都是用Remembered Set来避免全局扫描**：
-![RememberedSet](../jvm/image/RememberedSet.png)
+![RememberedSet](../Java_Jvm/image/RememberedSet.png)
 
 **每个Region都有一个对象的Remembered Set**，每次Reference类型数据写操作时，都会产生 一个Write Barrier（写屏障）暂时中断操作。
 
@@ -2880,7 +2879,7 @@ G1 GC的垃圾回收过程主要包括3个环节：
 ③混合回收（Fixed GC)。
 
 （如果需要，单线程、独占是、高强度的Full GC还是继续存在的，它针对GC的评估失败提供了一种失败保护机制，即强力回收）。
-![G1回收过程](../jvm/image/G1回收过程.png)
+![G1回收过程](../Java_Jvm/image/G1回收过程.png)
 
 按照顺时针，Young GC --> Young GC + Concurrent Marking --> Mixed GC 顺序，进行垃圾回收。
 
@@ -2894,7 +2893,7 @@ G1 GC的垃圾回收过程主要包括3个环节：
 
 - **回收过程一：年轻代GC**
   JVM启动时，G1先准备好Eden区，程序在运行过程中不断创建对象到Eden区，当Eden区空间耗尽时，G1会启动一次年轻代垃圾回收过程。**年轻代垃圾回收只会回收Eden区和Survivor区**。YGC时，首先停止应用程序的执行（Stop The World），G1创建回收集（Collection Set），回收集是指需要被回收的内存分段的集合，年轻代回收过程的回收集包含年轻代Eden区和Survivor区所有的内存分段。然后开始如下回收过程
-  ![G1YoungGC](../jvm/image/G1YoungGC.png)
+  ![G1YoungGC](../Java_Jvm/image/G1YoungGC.png)
 
   - **第一阶段：扫描根**。根是指static变量指向的对象，正在执行的方法调用链上的局部变量等。根引用连同Remembered Set记录的外部引用作为扫描存活对象的入口。
   
@@ -2919,7 +2918,7 @@ G1 GC的垃圾回收过程主要包括3个环节：
 
 - **回收过程三：混合回收**
 
-  ![MixedGC](../jvm/image/MixedGC.png)
+  ![MixedGC](../Java_Jvm/image/MixedGC.png)
 
   当越来越多的对象晋升到老年代old region是，为了避免堆内存被耗尽，虚拟机会触发一个混合的垃圾收集器，即Mixed GC，该算法并不是一个Old GC，除了回收整个Young Region，还会回收一部分的Old Region。这里需要注意：**是一部分老年代，而不是全部老年代**。可以选择哪些Old Region进行收集，从而可以对垃圾回收时的耗时时间进行控制。也要注意的是Mixed GC并不是Full GC。
 
@@ -2988,23 +2987,23 @@ G1 GC的垃圾回收过程主要包括3个环节：
 
  **举例说明：**
 
-![GC日志](../jvm/image/GC日志.png)
+![GC日志](../Java_Jvm/image/GC日志.png)
 
-![GC日志](../jvm/image/GC日志2.png)
+![GC日志](../Java_Jvm/image/GC日志2.png)
 
-![GC日志](../jvm/image/GC日志1.png)
+![GC日志](../Java_Jvm/image/GC日志1.png)
 
-![GC日志](../jvm/image/GC日志3.png)
+![GC日志](../Java_Jvm/image/GC日志3.png)
 
-![GC日志](../jvm/image/GC日志4.png)
+![GC日志](../Java_Jvm/image/GC日志4.png)
 
-![GC日志](../jvm/image/GC日志5.png)
+![GC日志](../Java_Jvm/image/GC日志5.png)
 
 Young GC:
-![GC日志](../jvm/image/GC日志6.png)
+![GC日志](../Java_Jvm/image/GC日志6.png)
 
 Full GC:
-![GC日志](../jvm/image/GC日志7.png)
+![GC日志](../Java_Jvm/image/GC日志7.png)
 
 
 ## 3. 字节码与类的加载
@@ -3329,7 +3328,7 @@ option
 **死锁举例：**
 
 ```java
-package com.bigdata.lianwl.jvm;
+package com.bigdata.lianwl.Java_Jvm;
 
 import java.util.concurrent.TimeUnit;
 
@@ -3407,19 +3406,19 @@ Full thread dump Java HotSpot(TM) 64-Bit Server VM (25.261-b12 mixed mode):
 ## 这里可以看到Thread-1现在是阻塞状态，等待获取锁 0x000000076b778cb0，持有锁 0x000000076b778cf8
 "Thread-1" #13 prio=5 os_prio=0 tid=0x00000205e5049800 nid=0x38c8 waiting for monitor entry [0x000000360ecff000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
         - waiting to lock <0x000000076b778cb0> (a java.lang.StringBuilder)
         - locked <0x000000076b778cf8> (a java.lang.StringBuilder)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
         at java.lang.Thread.run(Thread.java:748)
         
 ## 这里可以看到Thread-0现在是阻塞状态，等待获取锁 0x000000076b778cf8，持有锁 0x000000076b778cb0
 "Thread-0" #12 prio=5 os_prio=0 tid=0x00000205e5048000 nid=0x2a28 waiting for monitor entry [0x000000360ebff000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
         - waiting to lock <0x000000076b778cf8> (a java.lang.StringBuilder)
         - locked <0x000000076b778cb0> (a java.lang.StringBuilder)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
         at java.lang.Thread.run(Thread.java:748)
 
 "Service Thread" #11 daemon prio=9 os_prio=0 tid=0x00000205e4d14800 nid=0x8ec runnable [0x0000000000000000]
@@ -3513,16 +3512,16 @@ Found one Java-level deadlock:
 Java stack information for the threads listed above:
 ===================================================
 "Thread-1":
-        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
         - waiting to lock <0x000000076b778cb0> (a java.lang.StringBuilder)
         - locked <0x000000076b778cf8> (a java.lang.StringBuilder)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
         at java.lang.Thread.run(Thread.java:748)
 "Thread-0":
-        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
         - waiting to lock <0x000000076b778cf8> (a java.lang.StringBuilder)
         - locked <0x000000076b778cb0> (a java.lang.StringBuilder)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
         at java.lang.Thread.run(Thread.java:748)
 
 Found 1 deadlock.
@@ -3549,7 +3548,7 @@ C:\Users\sedra>jcmd -l
 12548 sun.tools.jcmd.JCmd -l
 10280
 14504 org.jetbrains.jps.cmdline.Launcher D:/soft/IDEA2020.1.2/lib/jps-model.jar;D:/soft/IDEA2020.1.2/lib/jna.jar;D:/soft/IDEA2020.1.2/lib/maven-model-3.6.1.jar;D:/soft/IDEA2020.1.2/lib/annotations.jar;D:/soft/IDEA2020.1.2/lib/maven-resolver-impl-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/netty-transport-4.1.47.Final.jar;D:/soft/IDEA2020.1.2/lib/maven-builder-support-3.6.1.jar;D:/soft/IDEA2020.1.2/lib/protobuf-java-3.5.1.jar;D:/soft/IDEA2020.1.2/lib/trove4j.jar;D:/soft/IDEA2020.1.2/lib/gson-2.8.6.jar;D:/soft/IDEA2020.1.2/lib/oro-2.0.8.jar;D:/soft/IDEA2020.1.2/lib/log4j.jar;D:/soft/IDEA2020.1.2/plugins/java/lib/jps-builders-6.jar;D:/soft/IDEA2020.1.2/lib/asm-all-7.0.1.jar;D:/soft/IDEA2020.1.2/lib/platform-api.jar;D:/soft/IDEA2020.1.2/lib/netty-common-4.1.47.Final.jar;D:/soft/IDEA2020.1.2/lib/forms-1.1-preview.jar;D:/soft/IDEA2020.1.2/lib/maven-resolver-spi-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/jna-platform.jar;D:/soft/IDEA2020.1.2/plugins/java/lib/maven-resolver-transport-http-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/slf4j-api-1.7.25
-6584 com.bigdata.lianwl.jvm.ThreadDeadLock
+6584 com.bigdata.lianwl.Java_Jvm.ThreadDeadLock
 10348 org.jetbrains.kotlin.daemon.KotlinCompileDaemon --daemon-runFilesPath C:\Users\sedra\AppData\Local\kotlin\daemon --daemon-autoshutdownIdleSeconds=7200 --daemon-compilerClasspath D:\soft\IDEA2020.1.2\plugins\Kotlin\kotlinc\lib\kotlin-compiler.jar;C:\Java\jdk1.8.0_261\lib\tools.jar;D:\soft\IDEA2020.1.2\plugins\Kotlin\kotlinc\lib\kotlin-daemon.jar
 14204 org.jetbrains.jps.cmdline.Launcher D:/soft/IDEA2020.1.2/lib/jps-model.jar;D:/soft/IDEA2020.1.2/lib/jna.jar;D:/soft/IDEA2020.1.2/lib/maven-model-3.6.1.jar;D:/soft/IDEA2020.1.2/lib/annotations.jar;D:/soft/IDEA2020.1.2/lib/maven-resolver-impl-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/netty-transport-4.1.47.Final.jar;D:/soft/IDEA2020.1.2/lib/maven-builder-support-3.6.1.jar;D:/soft/IDEA2020.1.2/lib/protobuf-java-3.5.1.jar;D:/soft/IDEA2020.1.2/lib/trove4j.jar;D:/soft/IDEA2020.1.2/lib/gson-2.8.6.jar;D:/soft/IDEA2020.1.2/lib/oro-2.0.8.jar;D:/soft/IDEA2020.1.2/lib/log4j.jar;D:/soft/IDEA2020.1.2/plugins/java/lib/jps-builders-6.jar;D:/soft/IDEA2020.1.2/lib/asm-all-7.0.1.jar;D:/soft/IDEA2020.1.2/lib/platform-api.jar;D:/soft/IDEA2020.1.2/lib/netty-common-4.1.47.Final.jar;D:/soft/IDEA2020.1.2/lib/forms-1.1-preview.jar;D:/soft/IDEA2020.1.2/lib/maven-resolver-spi-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/jna-platform.jar;D:/soft/IDEA2020.1.2/plugins/java/lib/maven-resolver-transport-http-1.3.3.jar;D:/soft/IDEA2020.1.2/lib/slf4j-api-1.7.25
 
@@ -3598,18 +3597,18 @@ Full thread dump Java HotSpot(TM) 64-Bit Server VM (25.261-b12 mixed mode):
 
 "Thread-1" #13 prio=5 os_prio=0 tid=0x0000014db9ce0800 nid=0x34cc waiting for monitor entry [0x00000005517ff000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
         - waiting to lock <0x000000076b778cb0> (a java.lang.StringBuilder)
         - locked <0x000000076b778cf8> (a java.lang.StringBuilder)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
         at java.lang.Thread.run(Thread.java:748)
 
 "Thread-0" #12 prio=5 os_prio=0 tid=0x0000014db9cdf800 nid=0x35e8 waiting for monitor entry [0x00000005516ff000]
    java.lang.Thread.State: BLOCKED (on object monitor)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
         - waiting to lock <0x000000076b778cf8> (a java.lang.StringBuilder)
         - locked <0x000000076b778cb0> (a java.lang.StringBuilder)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
         at java.lang.Thread.run(Thread.java:748)
 
 "Service Thread" #11 daemon prio=9 os_prio=0 tid=0x0000014db99d6800 nid=0x33b8 runnable [0x0000000000000000]
@@ -3703,16 +3702,16 @@ Found one Java-level deadlock:
 Java stack information for the threads listed above:
 ===================================================
 "Thread-1":
-        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock.lambda$main$1(ThreadDeadLock.java:47)
         - waiting to lock <0x000000076b778cb0> (a java.lang.StringBuilder)
         - locked <0x000000076b778cf8> (a java.lang.StringBuilder)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock$$Lambda$2/284720968.run(Unknown Source)
         at java.lang.Thread.run(Thread.java:748)
 "Thread-0":
-        at com.bigdata.lianwl.jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock.lambda$main$0(ThreadDeadLock.java:26)
         - waiting to lock <0x000000076b778cf8> (a java.lang.StringBuilder)
         - locked <0x000000076b778cb0> (a java.lang.StringBuilder)
-        at com.bigdata.lianwl.jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
+        at com.bigdata.lianwl.Java_Jvm.ThreadDeadLock$$Lambda$1/1867083167.run(Unknown Source)
         at java.lang.Thread.run(Thread.java:748)
 
 Found 1 deadlock.
